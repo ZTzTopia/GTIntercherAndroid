@@ -2,4 +2,5 @@
     <string name="app_name">GTLauncher</string>
     <string name="textedit_done">Done</string>
     <string name="textedit_cancel">Cancel</string>
+    <string name="floating_app">Floating Application</string>
 </resources>

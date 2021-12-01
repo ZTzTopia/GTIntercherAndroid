@@ -1,12 +1,17 @@
 package com.gt.launcher;
 
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -39,6 +44,18 @@ public class Launch extends SharedActivity {
 
             super.onCreate(savedInstanceState);
         }
+
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            Toast.makeText(getApplicationContext(), "Overlay permission is required in order to show mod menu. Restart the game after you allow permission", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Overlay permission is required in order to show mod menu. Restart the game after you allow permission", Toast.LENGTH_LONG).show();
+            startActivity(new Intent("android.settings.action.MANAGE_OVERLAY_PERMISSION", Uri.parse("package:" + getPackageName())));
+            final Handler handler = new Handler();
+            handler.postDelayed(() -> System.exit(1), 5000);
+        }
+        else {
+            final Handler handler = new Handler();
+            handler.postDelayed(() -> startService(new Intent(Launch.this, FloatingService.class)), 500);
+        }*/
     }
 
     public static boolean toggleKeyboard(boolean show, int max, String text, boolean isPassword) {

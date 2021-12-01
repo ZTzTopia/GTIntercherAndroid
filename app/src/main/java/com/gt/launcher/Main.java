@@ -13,18 +13,12 @@
 package com.gt.launcher;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Process;
 import android.util.Log;
-import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -32,13 +26,8 @@ import androidx.appcompat.app.AlertDialog;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 
-import java.io.File;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.util.Arrays;
-
-import dalvik.system.BaseDexClassLoader;
-import dalvik.system.PathClassLoader;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Main extends Activity {
     private final String TAG = "GTLauncher";
