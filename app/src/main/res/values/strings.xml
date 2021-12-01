@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">GTLauncher</string>
+    <string name="textedit_done">Done</string>
+    <string name="textedit_cancel">Cancel</string>
+</resources>
