@@ -4,11 +4,10 @@ import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.WindowManager;
 
 import com.gt.launcher.FloatingService;
 
-class AppGLSurfaceView extends GLSurfaceView {
+public class AppGLSurfaceView extends GLSurfaceView {
     boolean rendererSet;
 
     public AppGLSurfaceView(Context context) {

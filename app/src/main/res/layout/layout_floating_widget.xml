@@ -11,13 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="32dp">
 
-        <ImageView
-            android:orientation="horizontal"
-            android:id="@+id/id_floating_close_button"
-            android:layout_width="32dp"
-            android:layout_height="match_parent"
-            android:src="@drawable/ic_baseline_arrow_back_24"/>
-
         <TextView
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textColor="#ffffffff"

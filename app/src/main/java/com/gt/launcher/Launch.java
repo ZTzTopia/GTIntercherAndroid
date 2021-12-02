@@ -1,6 +1,5 @@
 package com.gt.launcher;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -18,8 +17,6 @@ import androidx.annotation.Nullable;
 import com.rtsoft.growtopia.SharedActivity;
 
 import java.io.File;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class Launch extends SharedActivity {
     @Override
@@ -35,17 +32,17 @@ public class Launch extends SharedActivity {
         PackageName = "com.rtsoft.growtopia";
         if (!new File(Environment.getExternalStorageDirectory().toString() + File.separatorChar + "windows" + File.separatorChar + "BstSharedFolder").exists()) {
             try {
-                PackageInfo packageInfo = getPackageManager().getPackageInfo(PackageName, 0);
-                String libraryPath = packageInfo.applicationInfo.nativeLibraryDir;
+                String libraryPath = getPackageManager().getPackageInfo(PackageName, 0).applicationInfo.nativeLibraryDir;
                 System.load(libraryPath + "/lib" + dllname + ".so");
-            } catch (PackageManager.NameNotFoundException e) {
+            }
+            catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }
 
             super.onCreate(savedInstanceState);
         }
 
-        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             Toast.makeText(getApplicationContext(), "Overlay permission is required in order to show mod menu. Restart the game after you allow permission", Toast.LENGTH_LONG).show();
             Toast.makeText(getApplicationContext(), "Overlay permission is required in order to show mod menu. Restart the game after you allow permission", Toast.LENGTH_LONG).show();
             startActivity(new Intent("android.settings.action.MANAGE_OVERLAY_PERMISSION", Uri.parse("package:" + getPackageName())));
@@ -55,7 +52,7 @@ public class Launch extends SharedActivity {
         else {
             final Handler handler = new Handler();
             handler.postDelayed(() -> startService(new Intent(Launch.this, FloatingService.class)), 500);
-        }*/
+        }
     }
 
     public static boolean toggleKeyboard(boolean show, int max, String text, boolean isPassword) {

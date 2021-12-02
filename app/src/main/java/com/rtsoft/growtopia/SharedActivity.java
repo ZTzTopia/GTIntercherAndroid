@@ -42,7 +42,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -52,6 +51,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
+
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingResult;
@@ -73,6 +73,7 @@ import com.tapjoy.TJPlacementVideoListener;
 import com.tapjoy.Tapjoy;
 import com.tapjoy.TapjoyConnectFlag;
 import com.tapjoy.TapjoyLog;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -356,6 +357,8 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         });
     }
 
+    public boolean isInFloatingMode = false;
+
     protected synchronized void onPause() {
         Log.d(PackageName, "onPause...");
 
@@ -374,7 +377,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         float hzTemp = accelHzSave;
         setup_accel(0.0f);
         accelHzSave = hzTemp;
-        mGLView.onPause();
+        if (!isInFloatingMode) {
+            mGLView.onPause();
+        }
         super.onPause();
     }
 
@@ -687,14 +692,13 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     }
 
     private void RegisterLayoutChangeCallback() {
-        final Window window = getWindow();
         mViewGroup.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
             Rect rect = new Rect();
-            window.getDecorView().getWindowVisibleDisplayFrame(rect);
+            getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
             m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
             if (m_KeyBoardHeight > 0 && !m_editText.isFocused()) {
                 Log.d("NIRMAN", "KeyboardX opening...");
-                this.UpdateEditBoxInView(true, false);
+                UpdateEditBoxInView(true, false);
             }
             else if (m_KeyBoardHeight == 0 && m_editText.isFocused()) {
                 Log.d("NIRMAN", "KeyboardX closing...");

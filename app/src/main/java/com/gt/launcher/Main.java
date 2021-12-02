@@ -13,7 +13,6 @@
 package com.gt.launcher;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -22,12 +21,6 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class Main extends Activity {
     private final String TAG = "GTLauncher";
@@ -41,17 +34,6 @@ public class Main extends Activity {
 
         try {
             getPackageManager().getPackageInfo("com.rtsoft.growtopia", 0);
-
-            /*String baseApkDir = packageInfo.applicationInfo.publicSourceDir.replace("base.apk", "");
-            File[] filesList = new File(baseApkDir).listFiles();
-            if (filesList != null) {
-                for (File file : filesList) {
-                    if (file.getName().endsWith(".apk") && (file.getName().contains("armeabi_v7a") || file.getName().contains("arm64_v8a"))) {
-                        Log.d(TAG, "Found apk: " + file.getName());
-                        zipExtract(file.getAbsolutePath(), getExternalFilesDir(null).getAbsolutePath() + "/extracted/");
-                    }
-                }
-            }*/
         }
         catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
@@ -71,36 +53,7 @@ public class Main extends Activity {
             return;
         }
 
-        new Launch(this).run();
-    }
-
-    private void zipExtract(String publicSourceDir, String destinationPath) {
-        try {
-            Log.d(TAG, "Extracting: " + publicSourceDir + " Destination: " + destinationPath);
-            ZipFile zipFile = new ZipFile(publicSourceDir);
-            zipFile.extractAll(destinationPath);
-        }
-        catch (ZipException e) {
-            e.printStackTrace();
-        }
-    }
-
-    static class Launch implements Runnable {
-        private final Main main;
-
-        public Launch(Main main) {
-            this.main = main;
-        }
-
-        @Override
-        public void run() {
-            try {
-                main.startActivity(new Intent(main, Class.forName("com.gt.launcher.Launch")));
-                main.finish();
-            }
-            catch (ClassNotFoundException e) {
-                throw new NoClassDefFoundError(e.getMessage());
-            }
-        }
+        startActivity(new Intent(this, Launch.class));
+        finish();
     }
 }

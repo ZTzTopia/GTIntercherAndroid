@@ -4,6 +4,10 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/drawable/ic_baseline_arrow_back_24.xml" value="0.236" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/drawable/ic_baseline_arrow_back_24_rounded.xml" value="0.236" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/drawable/round_border.xml" value="0.236" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/drawable/round_border_black.xml" value="0.236" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/layout/layout_floating_button.xml" value="0.19293478260869565" />
         <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/layout/layout_floating_widget.xml" value="0.24547101449275363" />
         <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/layout/layout_widget_.xml" value="0.24547101449275363" />
         <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/xml/splits0.xml" value="0.10989583333333333" />

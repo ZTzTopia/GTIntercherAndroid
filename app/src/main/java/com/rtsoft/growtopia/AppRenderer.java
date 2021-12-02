@@ -1,11 +1,9 @@
 package com.rtsoft.growtopia;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
@@ -27,8 +25,6 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.tapjoy.Tapjoy;
 
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,10 +32,6 @@ import java.util.List;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 class AppRenderer implements GLSurfaceView.Renderer {
     static long m_gameTimer;
@@ -52,7 +44,7 @@ class AppRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(final GL10 gl10, final EGLConfig eglConfig) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         nativeSetWindow(app.mGLView.getHolder().getSurface());
-        if (SharedActivity.m_advertiserID == "") {
+        if (SharedActivity.m_advertiserID.isEmpty()) {
             Thread thread = new Thread(() -> {
                 AdvertisingIdClient.Info advertisingIdInfo = null;
                 try {
