@@ -86,8 +86,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SharedActivity extends Activity implements SensorEventListener, TJGetCurrencyBalanceListener, TJPlacementVideoListener {
