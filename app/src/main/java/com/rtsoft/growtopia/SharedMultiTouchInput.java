@@ -2,8 +2,6 @@ package com.rtsoft.growtopia;
 
 import android.view.MotionEvent;
 
-import com.gt.launcher.FloatingService;
-
 import java.util.LinkedList;
 import java.util.ListIterator;
 

@@ -40,6 +40,10 @@ public class FloatingService extends Service {
 
         // The root frame layout of floating window and start floating window button.
         mFrameLayout = new FrameLayout(this);
+        mFrameLayout.setOnTouchListener((v, motionEvent) -> {
+            SharedActivity.app.aww(false);
+            return true;
+        });
 
         mFloatingWidget = LayoutInflater.from(this).inflate(R.layout.layout_floating_widget, null);
         mFloatingWidget.setVisibility(View.GONE);
@@ -65,11 +69,8 @@ public class FloatingService extends Service {
 
         imageView.setOnClickListener(v -> {
             if (mFloatingWidget.getVisibility() == View.VISIBLE) {
-                mWindowManager.removeView(mFrameLayout); // We need to remove the frame layout,
-                // So that the view can be added again.
-
                 // Hide the floating window.
-                setWindowManagerParams(true);
+                setWindowManagerParams(false, true);
                 mFloatingWidget.setVisibility(View.GONE);
 
                 // Set the button border to visible.
@@ -88,11 +89,8 @@ public class FloatingService extends Service {
                 SharedActivity.app.isInFloatingMode = false;
             }
             else {
-                mWindowManager.removeView(mFrameLayout);// We need to remove the frame layout,
-                // So that the view can be added again.
-
                 // Show the floating window.
-                setWindowManagerParams(false);
+                setWindowManagerParams(false, false);
                 mFloatingWidget.setVisibility(View.VISIBLE);
 
                 // Set the button border to transparent.
@@ -117,7 +115,7 @@ public class FloatingService extends Service {
         mFrameLayout.addView(imageView);
 
         // Set window manager params.
-        setWindowManagerParams(true);
+        setWindowManagerParams(true, true);
 
         // Floating window content.
         mFloatingWidgetContent = mFloatingWidget.findViewById(R.id.id_floating_widget_content);
@@ -141,7 +139,7 @@ public class FloatingService extends Service {
         }
     }
 
-    private void setWindowManagerParams(boolean isHideMode) {
+    private void setWindowManagerParams(boolean isFirstTime, boolean isHideMode) {
         // Calculate the size of floating window.
         DisplayMetrics displayMetrics = getApplicationContext().getResources().getDisplayMetrics();
         int widthPixels = displayMetrics.widthPixels;
@@ -168,7 +166,13 @@ public class FloatingService extends Service {
         params.x = 16; // Initial Position of window
         params.y = 16; // Initial Position of window
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        mWindowManager.addView(mFrameLayout, params);
+
+        if (isFirstTime) {
+            mWindowManager.addView(mFrameLayout, params);
+            return;
+        }
+
+        mWindowManager.updateViewLayout(mFrameLayout, params);
     }
 
     private static int initialX = 0;
