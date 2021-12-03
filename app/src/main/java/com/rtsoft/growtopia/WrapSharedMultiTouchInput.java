@@ -8,7 +8,8 @@ class WrapSharedMultiTouchInput {
     static {
         try {
             Class.forName("com.rtsoft.growtopia.SharedMultiTouchInput");
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -17,7 +18,6 @@ class WrapSharedMultiTouchInput {
         return SharedMultiTouchInput.OnInput(motionEvent);
     }
 
-    /* Calling here forces class initialization */
     public static void checkAvailable(SharedActivity sharedActivity) {
         SharedMultiTouchInput.init(sharedActivity);
     }

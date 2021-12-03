@@ -11,13 +11,13 @@ class AnzuScriptableWebInterface {
 
     @JavascriptInterface
     public void runCommand(String str) {
-        OnCommandListener onCommandListener = this.mOnCommandListener;
+        OnCommandListener onCommandListener = mOnCommandListener;
         if (onCommandListener != null) {
             onCommandListener.onCommand(str);
         }
     }
 
     public void setOnCommandListener(OnCommandListener onCommandListener) {
-        this.mOnCommandListener = onCommandListener;
+        mOnCommandListener = onCommandListener;
     }
 }

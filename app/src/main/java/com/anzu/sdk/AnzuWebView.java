@@ -11,8 +11,6 @@ import android.view.Display;
 import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -54,27 +52,27 @@ public class AnzuWebView extends WebView {
         setWebViewClient(new WebViewClient() {
             private int running = 0;
 
-            public void onPageFinished(WebView webView, String str) {
-                int i = running - 1;
-                running = i;
-                if (i == 0) {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView webView, String url) {
+                running++;
+                webView.loadUrl(url);
+                return true;
+            }
+
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                running = Math.max(running, 1);
+            }
+
+            public void onPageFinished(WebView webView, String url) {
+                running--;
+                if (running == 0) {
                     Anzu.logicCallback("load_finish");
                 }
             }
 
-            public void onPageStarted(WebView webView, String str, Bitmap bitmap) {
-                running = Math.max(running, 1);
-            }
-
-            public void onReceivedError(WebView webView, WebResourceRequest webResourceRequest, WebResourceError webResourceError) {
+            public void onReceivedError(WebView view, int errorCode,
+                                        String description, String failingUrl) {
                 Anzu.logicCallback("load_fail");
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView webView, String str) {
-                running++;
-                webView.loadUrl(str);
-                return true;
             }
         });
     }
@@ -83,20 +81,20 @@ public class AnzuWebView extends WebView {
         super.draw(canvas);
     }
 
-    void eval(String str) {
+    void eval(String javascript) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            loadUrl("javascript:" + str);
+            loadUrl("javascript:" + javascript);
             return;
         }
 
-        evaluateJavascript(str, str1 -> {
-            if (str1.compareTo("null") != 0) {
-                Log.println(Log.WARN, "ANZU", "JS CALL RETURNED: " + str1);
+        evaluateJavascript(javascript, javascriptEvaulated -> {
+            if (javascriptEvaulated.compareTo("null") != 0) {
+                Log.println(Log.WARN, "ANZU", "JS CALL RETURNED: " + javascriptEvaulated);
             }
         });
     }
 
-    public void resize(int i, int i2) {
-        layout(0, 0, i, i2);
+    public void resize(int width, int height) {
+        layout(0, 0, width, height);
     }
 }

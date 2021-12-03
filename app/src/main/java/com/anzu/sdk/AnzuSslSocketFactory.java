@@ -11,6 +11,7 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -25,7 +26,8 @@ public class AnzuSslSocketFactory extends SSLSocketFactory {
     public AnzuSslSocketFactory() {
         try {
             init();
-        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+        }
+        catch (KeyManagementException | NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
     }
@@ -41,7 +43,8 @@ public class AnzuSslSocketFactory extends SSLSocketFactory {
             try {
                 sSLSocket.setEnabledCipherSuites(set.toArray(new String[set.size()]));
                 break;
-            } catch (Throwable th) {
+            }
+            catch (Throwable th) {
                 String message = th.getMessage();
                 Iterator<String> it = set.iterator();
                 while (true) {

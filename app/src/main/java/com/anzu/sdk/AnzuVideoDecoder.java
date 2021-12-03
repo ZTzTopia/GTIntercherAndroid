@@ -15,10 +15,12 @@ import android.opengl.Matrix;
 import android.os.Build;
 import android.util.Log;
 import android.view.Surface;
+
 import com.google.android.gms.gcm.Task;
 import com.google.android.gms.search.SearchAuth;
 import com.tapjoy.TJAdUnitConstants;
 import com.tapjoy.TapjoyConstants;
+
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -634,25 +636,25 @@ public class AnzuVideoDecoder {
         return z;
     }
 
-    public double GetDuration() {
-        return clipDuration;
-    }
-
-    public int GetHeight() {
-        return videoHeight;
-    }
-
-    public double GetPlaybackPosition() {
-        double d = (double) videoBufferPresentationTime;
-        return d / 1000000.0d;
+    public boolean HasAudio() {
+        return decodesAudio;
     }
 
     public int GetWidth() {
         return videoWidth;
     }
 
-    public boolean HasAudio() {
-        return decodesAudio;
+    public int GetHeight() {
+        return videoHeight;
+    }
+
+    public double GetDuration() {
+        return clipDuration;
+    }
+
+    public double GetPlaybackPosition() {
+        double d = (double) videoBufferPresentationTime;
+        return d / 1000000.0d;
     }
 
     public ByteBuffer Play(long j, String str, boolean z, int i, int i2, int i3) {

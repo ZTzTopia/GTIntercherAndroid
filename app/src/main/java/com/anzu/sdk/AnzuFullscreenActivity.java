@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+
 import com.tapjoy.TJAdUnitConstants;
 
 public class AnzuFullscreenActivity extends Activity {
@@ -45,8 +46,6 @@ public class AnzuFullscreenActivity extends Activity {
         return iArr[(rotation ^ i) ^ (rotation & 1)];
     }
 
-    private static native void interstitialCallback(String str);
-
     private int orientationToRequest(boolean z, boolean z2, int i) {
         int i2 = new int[]{0, 2, 0, 2, 2, 1, 2, 2}[(((z ? 1 : 0) | (z2 ? 2 : 0)) << 1) | (i & 1)];
         int[] iArr = new int[3];
@@ -55,10 +54,6 @@ public class AnzuFullscreenActivity extends Activity {
         iArr[2] = i;
         return iArr[i2];
     }
-
-    private native View setInterstitialActivity();
-
-    private native void unsetInterstitialActivity();
 
     public void onBackPressed() {
         interstitialCallback(TJAdUnitConstants.String.CLOSE);
@@ -100,4 +95,8 @@ public class AnzuFullscreenActivity extends Activity {
         frame.removeView(viewToAdd);
         viewToAdd = null;
     }
+
+    private static native void interstitialCallback(String str);
+    private native View setInterstitialActivity();
+    private native void unsetInterstitialActivity();
 }

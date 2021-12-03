@@ -9,17 +9,12 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingFlowParams;
-import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.ConsumeParams;
-import com.android.billingclient.api.ConsumeResponseListener;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
-import com.android.billingclient.api.SkuDetailsResponseListener;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -27,8 +22,6 @@ import com.tapjoy.Tapjoy;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -160,12 +153,12 @@ class AppRenderer implements GLSurfaceView.Renderer {
 
     public synchronized void onDrawFrame(final GL10 gl10) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        if (AppRenderer.m_timerLoopMS != 0) {
-            while (AppRenderer.m_gameTimer > SystemClock.uptimeMillis() || AppRenderer.m_gameTimer > SystemClock.uptimeMillis() + AppRenderer.m_timerLoopMS + 1L) {
+        if (m_timerLoopMS != 0) {
+            while (m_gameTimer > SystemClock.uptimeMillis() || m_gameTimer > SystemClock.uptimeMillis() + m_timerLoopMS + 1L) {
                 SystemClock.sleep(1L);
             }
 
-            AppRenderer.m_gameTimer = SystemClock.uptimeMillis() + AppRenderer.m_timerLoopMS;
+            m_gameTimer = SystemClock.uptimeMillis() + m_timerLoopMS;
         }
 
         if (!SharedActivity.bIsShuttingDown && Looper.myLooper() != Looper.getMainLooper()) {
@@ -175,10 +168,15 @@ class AppRenderer implements GLSurfaceView.Renderer {
 
         // Let's process OS messages sent from the app if any exist
         int type = MESSAGE_NONE;
-        while ((type = nativeOSMessageGet()) != 0 && !SharedActivity.bIsShuttingDown) { // It returns 0 if none is available
+        while (app != null && !SharedActivity.bIsShuttingDown) { // It returns 0 if none is available
+            type = nativeOSMessageGet();
+            if (type == 0 || app.mMainThreadHandler == null) {
+                break;
+            }
+
             switch (type) {
                 case MESSAGE_OPEN_TEXTBOX_SECRET:
-                case MESSAGE_OPEN_TEXT_BOX: {
+                case MESSAGE_OPEN_TEXT_BOX: { // Open text box
                     Log.d(SharedActivity.PackageName, "keyboard " + (type == MESSAGE_OPEN_TEXTBOX_SECRET ? "MESSAGE_OPEN_TEXTBOX_SECRET" : "MESSAGE_OPEN_TEXT_BOX"));
                     SharedActivity.passwordField = type == MESSAGE_OPEN_TEXTBOX_SECRET;
                     SharedActivity.m_text_max_length = nativeGetLastOSMessageParm1();
@@ -192,7 +190,7 @@ class AppRenderer implements GLSurfaceView.Renderer {
                     app.mMainThreadHandler.post(app.mUpdateMainThread);
                     break;
                 }
-                case MESSAGE_CLOSE_TEXT_BOX: {
+                case MESSAGE_CLOSE_TEXT_BOX: { // Close text box
                     Log.d(SharedActivity.PackageName, "keyboard MESSAGE_CLOSE_TEXT_BOX");
                     app.toggle_keyboard(false);
                     app.mMainThreadHandler.post(app.mUpdateMainThread);
@@ -204,7 +202,7 @@ class AppRenderer implements GLSurfaceView.Renderer {
                 case MESSAGE_ALLOW_SCREEN_DIMMING: {
                     if (nativeGetLastOSMessageX() == 0.0f) {
                         // Disable screen dimming
-                        SharedActivity.set_disallow_dimming_asap = true;
+                        SharedActivity.set_disallow_dimming_asap = true; // Must do it in the UI thread
                         app.mMainThreadHandler.post(app.mUpdateMainThread);
                         break;
                     }
@@ -217,10 +215,11 @@ class AppRenderer implements GLSurfaceView.Renderer {
                 case MESSAGE_SET_FPS_LIMIT: {
                     if (nativeGetLastOSMessageX() == 0.0f) {
                         // Disable it, and avoid a div by 0
-                        AppRenderer.m_timerLoopMS = 0;
+                        m_timerLoopMS = 0;
+                        break;
                     }
 
-                    AppRenderer.m_timerLoopMS = (int) (1000.0f / nativeGetLastOSMessageX());
+                    m_timerLoopMS = (int) (1000.0f / nativeGetLastOSMessageX());
                     break;
                 }
                 case MESSAGE_FINISH_APP: {
@@ -233,15 +232,15 @@ class AppRenderer implements GLSurfaceView.Renderer {
                     nativeDone();
                     Log.v(SharedActivity.PackageName, "Native shutdown");
 
-                    // App.finish() will get called in the update handler called below, don't need to do it now
+                    // app.finish() will get called in the update handler called below, don't need to do it now
                     app.mMainThreadHandler.post(app.mUpdateMainThread);
                     break;
                 }
                 case MESSAGE_SUSPEND_TO_HOME_SCREEN: {
                     Log.v(SharedActivity.PackageName, "Suspending to home screen");
                     final Intent intent = new Intent();
-                    intent.setAction("android.intent.action.MAIN");
-                    intent.addCategory("android.intent.category.HOME");
+                    intent.setAction(Intent.ACTION_MAIN);
+                    intent.addCategory(Intent.CATEGORY_HOME);
                     app.startActivity(intent);
                     break;
                 }
@@ -271,8 +270,9 @@ class AppRenderer implements GLSurfaceView.Renderer {
                     break;
                 }
                 case MESSAGE_TAPJOY_SET_USERID: {
-                    Log.v(SharedActivity.PackageName, "Setting userID: " + nativeGetLastOSMessageString());
-                    Tapjoy.setUserID(nativeGetLastOSMessageString());
+                    String lastOSMessageString = nativeGetLastOSMessageString();
+                    Log.v(SharedActivity.PackageName, "Setting userID: " + lastOSMessageString);
+                    Tapjoy.setUserID(lastOSMessageString);
                     app.requestPlacement("Sub_01");
                     app.requestPlacement("GROW_GGP_V4VC_TV");
                     app.requestOfferwall("Grow_Store_Placement_01");
@@ -280,10 +280,10 @@ class AppRenderer implements GLSurfaceView.Renderer {
                 }
                 case MESSAGE_TAPJOY_GET_FEATURED_APP: {
                     // Re-purposing to show videos
-                    final String nativeGetLastOSMessageString = nativeGetLastOSMessageString();
+                    final String lastOSMessageString = nativeGetLastOSMessageString();
                     Log.v(SharedActivity.PackageName, "Asking tj for fullscreen ad");
-                    Log.v(SharedActivity.PackageName, "MESSAGE_TAPJOY_GET_FEATURED_APP: " + nativeGetLastOSMessageString);
-                    if (nativeGetLastOSMessageString.length() > 0 && app.tapjoyAdPlacementForSub01 != null && nativeGetLastOSMessageString.equals("Sub_01")) {
+                    Log.v(SharedActivity.PackageName, "MESSAGE_TAPJOY_GET_FEATURED_APP: " + lastOSMessageString);
+                    if (lastOSMessageString.length() > 0 && app.tapjoyAdPlacementForSub01 != null && lastOSMessageString.equals("Sub_01")) {
                         if (app.tapjoyAdPlacementForSub01.isContentReady()) {
                             app.tapjoyAdPlacementForSub01.showContent();
                         }
@@ -291,7 +291,7 @@ class AppRenderer implements GLSurfaceView.Renderer {
                         app.requestPlacementAndShow("Sub_01");
                     }
                     else {
-                        if (nativeGetLastOSMessageString.length() <= 0 || app.tapjoyAdPlacementForTV == null || !nativeGetLastOSMessageString.equals("GROW_GGP_V4VC_TV")) {
+                        if (lastOSMessageString.length() <= 0 || app.tapjoyAdPlacementForTV == null || !lastOSMessageString.equals("GROW_GGP_V4VC_TV")) {
                             Log.e(SharedActivity.PackageName, "Tapjoy Plancement name not passed");
                         }
 
@@ -309,18 +309,18 @@ class AppRenderer implements GLSurfaceView.Renderer {
                 case MESSAGE_TAPJOY_AWARD_TAP_POINTS:
                     break;
                 case MESSAGE_TAPJOY_SHOW_OFFERS: {
-                    String nativeGetLastOSMessageString = nativeGetLastOSMessageString();
+                    String lastOSMessageString = nativeGetLastOSMessageString();
                     if (app.offerwallPlacement == null) {
                         break;
                     }
 
                     if (app.offerwallPlacement.isContentReady()) {
                         app.offerwallPlacement.showContent();
-                        app.requestOfferwall(nativeGetLastOSMessageString);
+                        app.requestOfferwall(lastOSMessageString);
                         break;
                     }
 
-                    app.requestOfferwallAndShow(nativeGetLastOSMessageString);
+                    app.requestOfferwallAndShow(lastOSMessageString);
                     break;
                 }
                 case MESSAGE_TAPJOY_SHOW_AD: {
@@ -356,25 +356,26 @@ class AppRenderer implements GLSurfaceView.Renderer {
                         break;
                     }
 
-                    final String nativeGetLastOSMessageString = nativeGetLastOSMessageString();
-                    if (nativeGetLastOSMessageString == null) {
+                    final String lastOSMessageString = nativeGetLastOSMessageString();
+                    if (lastOSMessageString == null) {
                         break;
                     }
 
-                    if (!nativeGetLastOSMessageString.equals("")) {
+                    if (!lastOSMessageString.equals("")) {
                         final ArrayList<String> skusList = new ArrayList<>();
-                        skusList.add(nativeGetLastOSMessageString);
-                        final SkuDetailsParams.Builder builder2 = SkuDetailsParams.newBuilder();
-                        builder2.setSkusList(skusList).setType(BillingClient.SkuType.INAPP);
-                        app.billingClient.querySkuDetailsAsync(builder2.build(), new SkuDetailsResponseListener() {
-                            @Override
-                            public void onSkuDetailsResponse(@NonNull BillingResult billingResult, List<SkuDetails> list) {
-                                if (billingResult.getResponseCode() == 0) {
+                        skusList.add(lastOSMessageString);
+                        SkuDetailsParams skuDetailsParams = SkuDetailsParams.
+                                newBuilder()
+                                .setSkusList(skusList)
+                                .setType(BillingClient.SkuType.INAPP)
+                                .build();
+                        app.billingClient.querySkuDetailsAsync(skuDetailsParams, (billingResult, list) -> {
+                            if (billingResult.getResponseCode() == 0) {
+                                if (list != null && list.size() > 0) {
                                     for (SkuDetails skuDetails : list) {
                                         BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
                                                 .setSkuDetails(skuDetails)
                                                 .build();
-
                                         app.billingClient.launchBillingFlow(app, billingFlowParams);
                                     }
                                 }
@@ -396,7 +397,11 @@ class AppRenderer implements GLSurfaceView.Renderer {
 
                     final Purchase.PurchasesResult queryPurchases = app.billingClient.queryPurchases(BillingClient.SkuType.INAPP);
                     if (queryPurchases == null) {
-                        SharedActivity.nativeSendGUIEx(SharedActivity.MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE, -1, 0, 0);
+                        SharedActivity.nativeSendGUIEx(
+                                SharedActivity.MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE,
+                                -1,
+                                0,
+                                0);
                         break;
                     }
 
@@ -407,14 +412,27 @@ class AppRenderer implements GLSurfaceView.Renderer {
                             }
 
                             app.purchasedList.put(value.getSkus().get(0), value);
-                            SharedActivity.nativeSendGUIStringEx(SharedActivity.MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE, 0, 0, 0, value.getSkus().get(0) + "|" + value.getOriginalJson() + "|" + value.getSignature());
+                            SharedActivity.nativeSendGUIStringEx(
+                                    SharedActivity.MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE,
+                                    0,
+                                    0,
+                                    0,
+                                    value.getSkus().get(0) + "|" + value.getOriginalJson() + "|" + value.getSignature());
                         }
 
-                        SharedActivity.nativeSendGUIEx(SharedActivity.MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE, -1, 0, 0);
+                        SharedActivity.nativeSendGUIEx(
+                                SharedActivity.MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE,
+                                -1,
+                                0,
+                                0);
                         break;
                     }
 
-                    SharedActivity.nativeSendGUIEx(SharedActivity.MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE, -1, 0, 0);
+                    SharedActivity.nativeSendGUIEx(
+                            SharedActivity.MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE,
+                            -1,
+                            0,
+                            0);
                     break;
                 }
                 case MESSAGE_IAP_CONSUME_ITEM: {
@@ -423,9 +441,16 @@ class AppRenderer implements GLSurfaceView.Renderer {
                         app.makeToastUI("Google Play Billing has not initialized yet.");
                     }
 
-                    final String nativeGetLastOSMessageString = nativeGetLastOSMessageString();
-                    if (app.purchasedList.containsKey(nativeGetLastOSMessageString)) {
-                        app.billingClient.consumeAsync(ConsumeParams.newBuilder().setPurchaseToken(((Purchase)app.purchasedList.get(nativeGetLastOSMessageString)).getPurchaseToken()).build(), (ConsumeResponseListener)new AppRenderer.ConsumeResponseListenerImpl(this, nativeGetLastOSMessageString));
+                    final String lastOSMessageString = nativeGetLastOSMessageString();
+                    if (app.purchasedList.containsKey(lastOSMessageString)) {
+                        ConsumeParams consumeParams = ConsumeParams.newBuilder()
+                                .setPurchaseToken((app.purchasedList.get(lastOSMessageString)).getPurchaseToken())
+                                .build();
+                        app.billingClient.consumeAsync(consumeParams, (billingResult, s) -> {
+                            if (billingResult.getResponseCode() == 0) {
+                                app.purchasedList.remove(lastOSMessageString);
+                            }
+                        });
                     }
                     break;
                 }
@@ -433,32 +458,38 @@ class AppRenderer implements GLSurfaceView.Renderer {
                     try {
                         if (!app.billingClient.isReady()) {
                             app.makeToastUI("Google Play Billing has not initialized yet.");
+                            break;
                         }
-                        else {
-                            final String lastOSMessageString = nativeGetLastOSMessageString();
-                            if (!lastOSMessageString.equals("")) {
-                                ArrayList<String> skusList = new ArrayList<>();
-                                skusList.add(lastOSMessageString);
-                                SkuDetailsParams.Builder builder = SkuDetailsParams.newBuilder();
-                                builder.setSkusList(skusList).setType(BillingClient.SkuType.INAPP);
-                                app.billingClient.querySkuDetailsAsync(builder.build(), (billingResult, list) -> {
-                                    if (billingResult.getResponseCode() == 0) {
-                                        Iterator<SkuDetails> iterator = list.iterator();
+
+                        String lastOSMessageString = nativeGetLastOSMessageString();
+                        if (!lastOSMessageString.equals("")) {
+                            ArrayList<String> skusList = new ArrayList<>();
+                            skusList.add(lastOSMessageString);
+                            SkuDetailsParams skuDetailsParams = SkuDetailsParams.
+                                    newBuilder()
+                                    .setSkusList(skusList)
+                                    .setType(BillingClient.SkuType.INAPP)
+                                    .build();
+                            app.billingClient.querySkuDetailsAsync(skuDetailsParams, (billingResult, list) -> {
+                                if (billingResult.getResponseCode() == 0) {
+                                    if (list != null && list.size() > 0) {
                                         String string = "";
-                                        while (iterator.hasNext()) {
-                                            SkuDetails skuDetails = iterator.next();
+                                        for (SkuDetails skuDetails : list) {
                                             String sku = skuDetails.getSku();
                                             String priceCurrencyCode = skuDetails.getPriceCurrencyCode();
                                             String replaceAll = skuDetails.getPrice().replaceAll("[A-Za-z]", "");
                                             string = sku + "," + priceCurrencyCode + "," + replaceAll;
                                         }
 
-                                        if (!string.equals("")) {
-                                            SharedActivity.nativeSendGUIStringEx(SharedActivity.MESSAGE_TYPE_IAP_ITEM_INFO_RESULT, 0, 0, 0, string);
-                                        }
+                                        SharedActivity.nativeSendGUIStringEx(
+                                                SharedActivity.MESSAGE_TYPE_IAP_ITEM_INFO_RESULT,
+                                                0,
+                                                0,
+                                                0,
+                                                string);
                                     }
-                                });
-                            }
+                                }
+                            });
                         }
                     }
                     catch (Exception e) {
@@ -487,23 +518,6 @@ class AppRenderer implements GLSurfaceView.Renderer {
                     nativeEmergencyMessageClear();
                     break;
                 }
-            }
-        }
-    }
-
-    // TODO: Dont use class.
-    static class ConsumeResponseListenerImpl implements ConsumeResponseListener {
-        private final String itemId;
-        final private AppRenderer this$0;
-
-        public ConsumeResponseListenerImpl(final AppRenderer this$0, final String itemId) {
-            this.this$0 = this$0;
-            this.itemId = itemId;
-        }
-
-        public void onConsumeResponse(final BillingResult billingResult, @NonNull final String s) {
-            if (billingResult.getResponseCode() == 0) {
-                this$0.app.purchasedList.remove(itemId);
             }
         }
     }

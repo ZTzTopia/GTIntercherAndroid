@@ -32,7 +32,9 @@ public class Launch extends SharedActivity {
         PackageName = "com.rtsoft.growtopia";
         if (!new File(Environment.getExternalStorageDirectory().toString() + File.separatorChar + "windows" + File.separatorChar + "BstSharedFolder").exists()) {
             try {
-                String libraryPath = getPackageManager().getPackageInfo(PackageName, 0).applicationInfo.nativeLibraryDir;
+                String libraryPath = getPackageManager().getPackageInfo(PackageName, 0)
+                        .applicationInfo
+                        .nativeLibraryDir;
                 System.load(libraryPath + "/lib" + dllname + ".so");
             }
             catch (PackageManager.NameNotFoundException e) {

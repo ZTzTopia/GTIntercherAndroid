@@ -7,7 +7,7 @@ import android.view.MotionEvent;
 
 import com.gt.launcher.FloatingService;
 
-public class AppGLSurfaceView extends GLSurfaceView {
+class AppGLSurfaceView extends GLSurfaceView {
     boolean rendererSet;
 
     public AppGLSurfaceView(Context context) {
@@ -40,7 +40,8 @@ public class AppGLSurfaceView extends GLSurfaceView {
         try {
             WrapSharedMultiTouchInput.checkAvailable(app);
             mMultiTouchClassAvailable = true;
-        } catch (Throwable th) {
+        }
+        catch (Throwable th) {
             mMultiTouchClassAvailable = false;
         }
     }
@@ -65,27 +66,26 @@ public class AppGLSurfaceView extends GLSurfaceView {
         return true;
     }
 
-    public boolean onTouchEvent(MotionEvent motionEvent) {
-        synchronized (this) {
-            if (app.is_demo) {
-                app.showDialog(0);
-            }
-
-            FloatingService.updateViewLayout(motionEvent, false);
-
-            if (mMultiTouchClassAvailable) {
-                return WrapSharedMultiTouchInput.OnInput(motionEvent);
-            }
-
-            nativeOnTouch(motionEvent.getAction(), motionEvent.getX(), motionEvent.getY(), 0);
-            performClick();
-            return true;
+    public synchronized boolean onTouchEvent(MotionEvent motionEvent) {
+        if (app.is_demo) {
+            app.showDialog(0);
         }
+
+        FloatingService.updateViewLayout(motionEvent, false);
+
+        if (mMultiTouchClassAvailable) {
+            return WrapSharedMultiTouchInput.OnInput(motionEvent);
+        }
+
+        int finger = 0; // Planning ahead for multi touch
+        nativeOnTouch(motionEvent.getAction(), motionEvent.getX(), motionEvent.getY(), finger);
+        performClick();
+        return true;
     }
 
     AppRenderer mRenderer;
 
-    public static native void nativeOnTouch(int i, float f, float f2, int i2);
+    public static native void nativeOnTouch(int action, float x, float y, int finger);
     private static native void nativePause();
     private static native void nativeResume();
     public SharedActivity app;

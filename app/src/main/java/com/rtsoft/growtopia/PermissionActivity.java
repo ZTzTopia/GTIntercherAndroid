@@ -8,7 +8,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Html;
 import android.util.Log;
+
 import androidx.core.app.ActivityCompat;
+
 import com.google.android.gms.drive.DriveFile;
 
 public class PermissionActivity extends Activity {
@@ -21,10 +23,34 @@ public class PermissionActivity extends Activity {
     boolean shouldRequestForPermissions = false;
 
     public PermissionActivity() {
-        String[][] strArr = {new String[]{"android.permission.WRITE_EXTERNAL_STORAGE", "Storage", "The game needs this permission to write your progress to the device. The game cannot run without this permission."}};
+        String[][] strArr = { new String[]{ "android.permission.WRITE_EXTERNAL_STORAGE", "Storage", "The game needs this permission to write your progress to the device. The game cannot run without this permission." } };
         requiredPermissions = strArr;
         requestablePermissions = new String[strArr.length];
         checkPermissionIteration = 0;
+    }
+
+    protected void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
+        if (isActive) {
+            Log.d("PermissionActivity", "Active: Finishing.");
+            finish();
+        } else if (Build.VERSION.SDK_INT < 23) {
+            Log.d("PermissionActivity", "API Lower: Finishing.");
+            finish();
+        } else {
+            Log.d("PermissionActivity", "Checking Permissions.");
+            _pa = this;
+            isActive = true;
+            checkPermissions();
+        }
+    }
+
+    protected void onStart() {
+        super.onStart();
+    }
+
+    protected void onStop() {
+        super.onStop();
     }
 
     private void checkPermissions() {
@@ -110,22 +136,6 @@ public class PermissionActivity extends Activity {
         create.show();
     }
 
-    protected void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
-        if (isActive) {
-            Log.d("PermissionActivity", "Active: Finishing.");
-            finish();
-        } else if (Build.VERSION.SDK_INT < 23) {
-            Log.d("PermissionActivity", "API Lower: Finishing.");
-            finish();
-        } else {
-            Log.d("PermissionActivity", "Checking Permissions.");
-            _pa = this;
-            isActive = true;
-            checkPermissions();
-        }
-    }
-
     public void onRequestPermissionsResult(int i, String[] strArr, int[] iArr) {
         int length = strArr.length;
         boolean z = false;
@@ -143,13 +153,5 @@ public class PermissionActivity extends Activity {
 
         isActive = false;
         finish();
-    }
-
-    protected void onStart() {
-        super.onStart();
-    }
-
-    protected void onStop() {
-        super.onStop();
     }
 }

@@ -1,5 +1,7 @@
 package com.rtsoft.growtopia;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -8,6 +10,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Color;
@@ -31,8 +34,10 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
@@ -50,18 +55,20 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.vending.licensing.AESObfuscator;
 import com.android.vending.licensing.LicenseChecker;
 import com.android.vending.licensing.LicenseCheckerCallback;
 import com.android.vending.licensing.ServerManagedPolicy;
 import com.anzu.sdk.Anzu;
-import com.appsflyer.oaid.BuildConfig;
 import com.gt.launcher.R;
 import com.tapjoy.TJActionRequest;
 import com.tapjoy.TJConnectListener;
@@ -83,7 +90,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SharedActivity extends Activity implements SensorEventListener, TJGetCurrencyBalanceListener, TJPlacementVideoListener {
     //********** THESE WILL BE OVERRIDDEN IN YOUR Main.java file **************
-    public static String PackageName= "com.rtsoft.something";
+    public static String PackageName = "com.rtsoft.something";
     public static String dllname = "rtsomething";
     public static boolean securityEnabled = false; // If false, it won't try to use the online license stuff
     public static boolean bIsShuttingDown = false;
@@ -108,7 +115,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     public static SharedActivity app = null; // A global to use in static functions with JNI
 
     // For the accelerometer
-    private static float accelHzSave     = 0;
+    private static float accelHzSave = 0;
     private static Sensor sensor;
     private static SensorManager sensorManager;
     private static float m_lastMusicVol = 1;
@@ -129,8 +136,8 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     public ConcurrentHashMap<String, com.android.billingclient.api.Purchase> purchasedList = new ConcurrentHashMap<>();
     public TJPlacement tapjoyAdPlacementForSub01;
     public TJPlacement tapjoyAdPlacementForTV;
-    ProgressDialog nDialog;
-    ProgressDialog oDialog;
+    private ProgressDialog nDialog;
+    private ProgressDialog oDialog;
 
     public static boolean set_allow_dimming_asap = false;
     public static boolean set_disallow_dimming_asap = false;
@@ -144,8 +151,8 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     public boolean is_demo = false;
     public String BASE64_PUBLIC_KEY = "this will be set in your app's Main.java";
 
-    // 20 random bytes.  You can override these in your own Main.java
-    public byte[] SALT = new byte[] {
+    // 20 random bytes. You can override these in your own Main.java
+    public byte[] SALT = new byte[]{
             24, -96, 16, 91, 65, -86, -54, -73, -101, 12, -84, -90, -53, -68, 20, -67, 45, 35, 85, 17
     };
 
@@ -161,17 +168,25 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         public void allow(int reason) {
             Log.v("allow()", "Allow the user access");
             if (isFinishing()) {
-                /* ~ */
+                // Don't update UI if Activity is finishing.
+                return;
             }
+
+            // Should allow user access.
+            // displayResult(getString(R.string.allow));
         }
 
         @Override
         public void dontAllow(int reason) {
             Log.v("dontAllow()", "Don't allow the user access");
             is_demo = true;
-            if (!isFinishing()) {
-                showDialog(0);
+            if (isFinishing()) {
+                // Don't update UI if Activity is finishing.
+                return;
             }
+
+            // In this example, we show a dialog that takes the user to Market.
+            showDialog(0);
         }
 
         @Override
@@ -179,12 +194,14 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             Log.v("applicationError", String.format("Application error: %1$s", applicationErrorCode));
             dontAllow(applicationErrorCode);
             if (isFinishing()) {
-                /* ~ */
+                // Don't update UI if Activity is finishing.
+                return;
             }
         }
     }
 
     protected Dialog onCreateDialog(int id) {
+        // We have only one dialog.
         return new AlertDialog.Builder(this)
                 .setTitle("Application not licensed")
                 .setMessage("This application is not licensed.  Please purchase it from Android Market.\n\nTip: if you have purchased this application, press Retry a few times.  It may take a minute to connect to the licensing server.  If that does not work, try rebooting your phone.")
@@ -205,16 +222,23 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         mChecker.checkAccess(mLicenseCheckerCallback);
     }
 
+    @SuppressLint("HardwareIds")
     private void license_init() {
         // Try to use more data here. ANDROID_ID is a single point of attack.
-        String string = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
         // Library calls this when it's done.
         mLicenseCheckerCallback = new MyLicenseCheckerCallback();
         // Construct the LicenseChecker with a policy.
-        mChecker = new LicenseChecker(this, new ServerManagedPolicy(this, new AESObfuscator(this.SALT, getPackageName(), string)), this.BASE64_PUBLIC_KEY);
+        mChecker = new LicenseChecker(
+                this,
+                new ServerManagedPolicy(this, new AESObfuscator(this.SALT, getPackageName(), deviceId)),
+                // new StrictPolicy(),
+                BASE64_PUBLIC_KEY);
         doCheck();
     }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     public final Handler mMainThreadHandler = new Handler();
 
@@ -267,10 +291,16 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
         mGLView = new AppGLSurfaceView(this, this);
         mViewGroup = new RelativeLayout(this);
-        mViewGroup.setLayoutParams(new ViewGroup.LayoutParams(-1, -1));
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(-1, -1);
-        layoutParams.addRule(10);
+        mViewGroup.setLayoutParams(new ViewGroup.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.MATCH_PARENT));
+
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.MATCH_PARENT);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         mGLView.setLayoutParams(layoutParams);
+
         mViewGroup.addView(mGLView);
         setContentView(mViewGroup);
 
@@ -285,9 +315,11 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
         // Create dummy tapjoy view overlay we'll show ads on
         adLinearLayout = new RelativeLayout(this);
-        RelativeLayout.LayoutParams l = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layoutParams = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT);
         Log.d(PackageName, "Tapjoy enabled - setting up adview overlay");
-        addContentView(adLinearLayout, l);
+        addContentView(adLinearLayout, layoutParams);
 
         Log.d(PackageName, "Setting IAB...");
 
@@ -298,32 +330,56 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             purchaseUpdateListener = (billingResult, list) -> {
                 int responseCode = billingResult.getResponseCode();
                 if (responseCode == 0 && list != null) {
-                    for (com.android.billingclient.api.Purchase purchase : list) {
+                    for (Purchase purchase : list) {
                         if (purchase.getPurchaseState() == 1) {
-                            nativeSendGUIStringEx(MESSAGE_TYPE_IAP_RESULT, responseCode, 0, 0, purchase.getOriginalJson() + "|" + purchase.getSignature());
+                            nativeSendGUIStringEx(
+                                    MESSAGE_TYPE_IAP_RESULT,
+                                    responseCode,
+                                    0,
+                                    0,
+                                    purchase.getOriginalJson() + "|" + purchase.getSignature());
                         } else if (purchase.getPurchaseState() == 2) {
-                            nativeSendGUIStringEx(MESSAGE_TYPE_IAP_RESULT, responseCode, 5, 0, purchase.getOriginalJson() + "|" + purchase.getSignature());
+                            nativeSendGUIStringEx(
+                                    MESSAGE_TYPE_IAP_RESULT,
+                                    responseCode,
+                                    5,
+                                    0,
+                                    purchase.getOriginalJson() + "|" + purchase.getSignature());
                         }
                     }
-                }
-                else if (responseCode == 7) {
-                    com.android.billingclient.api.Purchase.PurchasesResult queryPurchases = billingClient.queryPurchases(BillingClient.SkuType.INAPP);
-                    if (queryPurchases == null) {
-                        nativeSendGUIEx(MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE, -1, 0, 0);
-                    }
-                    else if (queryPurchases.getPurchasesList() == null || queryPurchases.getPurchasesList().size() == 0) {
-                        nativeSendGUIEx(MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE, -1, 0, 0);
-                    }
-                    else {
-                        for (com.android.billingclient.api.Purchase purchase : queryPurchases.getPurchasesList()) {
-                            if (purchase.getPurchaseState() == 1) {
-                                nativeSendGUIStringEx(MESSAGE_TYPE_IAP_RESULT, responseCode, 0, 0, purchase.getOriginalJson() + "|" + purchase.getSignature());
+                } else {
+                    if (responseCode == 7) {
+                        Purchase.PurchasesResult queryPurchases = billingClient.queryPurchases(BillingClient.SkuType.INAPP);
+                        if (queryPurchases == null) {
+                            nativeSendGUIEx(
+                                    MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE,
+                                    -1,
+                                    0,
+                                    0);
+                            return;
+                        }
+
+                        if (queryPurchases.getPurchasesList() == null || queryPurchases.getPurchasesList().size() == 0) {
+                            nativeSendGUIEx(
+                                    MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE,
+                                    -1,
+                                    0,
+                                    0);
+                        } else {
+                            for (com.android.billingclient.api.Purchase purchase : queryPurchases.getPurchasesList()) {
+                                if (purchase.getPurchaseState() == 1) {
+                                    nativeSendGUIStringEx(
+                                            MESSAGE_TYPE_IAP_RESULT,
+                                            responseCode,
+                                            0,
+                                            0,
+                                            purchase.getOriginalJson() + "|" + purchase.getSignature());
+                                }
                             }
                         }
+                    } else {
+                        nativeSendGUIEx(MESSAGE_TYPE_IAP_RESULT, responseCode, 0, 0);
                     }
-                }
-                else {
-                    nativeSendGUIEx(MESSAGE_TYPE_IAP_RESULT, responseCode, 0, 0);
                 }
             };
 
@@ -347,14 +403,6 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
         Anzu.SetContext(this);
         sendVersionDetails();
-    }
-
-    public void makeToastUI(String text) {
-        runOnUiThread(() -> {
-            Toast makeText = Toast.makeText(app.getApplicationContext(), text, Toast.LENGTH_LONG);
-            makeText.setGravity(Gravity.CENTER, 0, 0);
-            makeText.show();
-        });
     }
 
     public boolean isInFloatingMode = false;
@@ -449,6 +497,14 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         }
     }
 
+    public void makeToastUI(String text) {
+        runOnUiThread(() -> {
+            Toast makeText = Toast.makeText(app.getApplicationContext(), text, Toast.LENGTH_LONG);
+            makeText.setGravity(Gravity.CENTER, 0, 0);
+            makeText.show();
+        });
+    }
+
     // JNI used to get Save data dir
     public static String get_docdir() {
         return app.getExternalFilesDir(null).getAbsolutePath();
@@ -460,14 +516,12 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         boolean mExternalStorageWriteable = false;
 
         String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
+        if (state.equals(Environment.MEDIA_MOUNTED)) {
             mExternalStorageAvailable = mExternalStorageWriteable = true;
-        }
-        else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+        } else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
             mExternalStorageAvailable = true;
             mExternalStorageWriteable = false;
-        }
-        else {
+        } else {
             // mExternalStorageAvailable = mExternalStorageWriteable = false;
         }
 
@@ -475,22 +529,6 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             return "";
         }
         return Environment.getExternalStorageDirectory().toString();
-    }
-
-    public static String get_language() {
-        return Locale.getDefault().getLanguage().toLowerCase();
-    }
-
-    public static String get_device_model() {
-        String str = Build.MODEL;
-        Log.d("get_device_model", str);
-        return str;
-    }
-
-    public static String get_device_os() {
-        String str = Build.VERSION.RELEASE;
-        Log.d("get_device_os", str);
-        return str;
     }
 
     // JNI used to get Save data dir
@@ -509,36 +547,76 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         return (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase();
     }
 
-    public static int is_app_installed(String str) {
-        try {
-            app.getPackageManager().getApplicationInfo(str, 0);
-            return 1;
-        } catch (PackageManager.NameNotFoundException unused) {
-            return 0;
-        }
-    }
-
     public static String get_clipboard() {
         // Note: On Honeycomb this appears to cause a crash because it has to be done in the main thread, which isn't active when
         // JNI invokes this.  So we have to do a callback and send back the answer later? Argh.  For now, I'll try/catch the crash, it
         // will just be a no-op.
 
         try {
-            return ((ClipboardManager) app.getSystemService(Context.CLIPBOARD_SERVICE)).getPrimaryClip().getItemAt(0).getText().toString();
+            ClipboardManager clipboardManager = (ClipboardManager) app.getSystemService(CLIPBOARD_SERVICE);
+            return clipboardManager.getPrimaryClip().getItemAt(0).getText().toString();
         } catch (Exception e) {
-            String str = PackageName;
-            Log.d(str, "get_clipboard> Avoided crash. " + e);
+            Log.d(PackageName, "get_clipboard> Avoided crash. " + e);
             return "Thread error, sorry, paste can't be used here.";
         }
     }
 
+    @SuppressLint({"WrongConstant", "MissingPermission", "HardwareIds"})
     public static String get_deviceID() {
-        return "35" + (Build.BOARD.length() % 10) + (Build.BRAND.length() % 10) + (Build.CPU_ABI.length() % 10) + (Build.DEVICE.length() % 10) + (Build.DISPLAY.length() % 10) + (Build.HOST.length() % 10) + (Build.ID.length() % 10) + (Build.MANUFACTURER.length() % 10) + (Build.MODEL.length() % 10) + (Build.PRODUCT.length() % 10) + (Build.TAGS.length() % 10) + (Build.TYPE.length() % 10) + (Build.USER.length() % 10);
+        String m_szDevIDShort = "35" + // We make this look like a valid IMEI
+                Build.BOARD.length() % 10 + Build.BRAND.length() % 10 +
+                Build.CPU_ABI.length() % 10 + Build.DEVICE.length() % 10 +
+                Build.DISPLAY.length() % 10 + Build.HOST.length() % 10 +
+                Build.ID.length() % 10 + Build.MANUFACTURER.length() % 10 +
+                Build.MODEL.length() % 10 + Build.PRODUCT.length() % 10 +
+                Build.TAGS.length() % 10 + Build.TYPE.length() % 10 +
+                Build.USER.length() % 10; // 13 digits
+
+        if (app.checkCallingOrSelfPermission("android.permission.READ_PHONE_STATE") == PackageManager.PERMISSION_GRANTED) {
+            TelephonyManager tm = (TelephonyManager) app.getSystemService(Context.TELEPHONY_SERVICE);
+            final String DeviceId, SerialNum;
+            DeviceId = tm.getDeviceId();
+            SerialNum = tm.getSimSerialNumber();
+            return m_szDevIDShort + DeviceId + SerialNum;
+        } else {
+            return m_szDevIDShort;
+        }
     }
 
+    @SuppressLint({"HardwareIds", "MissingPermission"})
     public static String get_macAddress() {
-        String macAddress = ((WifiManager) app.getApplicationContext().getSystemService(Context.WIFI_SERVICE)).getConnectionInfo().getMacAddress();
-        return macAddress == null ? BuildConfig.FLAVOR : macAddress;
+        WifiManager wimanager = (WifiManager) app.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if (requestPermission("ACCESS_FINE_LOCATION")) {
+            String macAddress = wimanager.getConnectionInfo().getMacAddress();
+            return macAddress == null ? "" : macAddress;
+        }
+        return "";
+    }
+
+    public static String get_language() {
+        return Locale.getDefault().getLanguage().toLowerCase();
+    }
+
+    public static String get_device_model() {
+        String str = Build.MODEL;
+        Log.d("get_device_model", str);
+        return str;
+    }
+
+    public static String get_device_os() {
+        String str = Build.VERSION.RELEASE;
+        Log.d("get_device_os", str);
+        return str;
+    }
+
+    public static int is_app_installed(String str) {
+        try {
+            app.getPackageManager().getApplicationInfo(str, 0);
+            return 1;
+        }
+        catch (PackageManager.NameNotFoundException unused) {
+            return 0;
+        }
     }
 
     private static boolean hasSuperuserApk() {
@@ -547,11 +625,10 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     private static int isTestKeyBuild() {
         String str = Build.TAGS;
-        if (str == null) {
-            return 1;
+        if ((str != null) && (str.contains("test-keys")));
+        for (int i = 1; ; i = 0) {
+            return i;
         }
-        str.contains("test-keys");
-        return 1;
     }
 
     public static String get_advertisingIdentifier() {
@@ -559,7 +636,17 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     }
 
     public static String get_cantSupportTrees() {
-        return (hasSuperuserApk() || is_app_installed("com.noshufou.android.su") == 1 || is_app_installed("com.thirdparty.superuser") == 1 || is_app_installed("eu.chainfire.supersu") == 1 || is_app_installed("com.koushikdutta.superuser") == 1 || is_app_installed("com.zachspong.temprootremovejb") == 1 || is_app_installed("com.ramdroid.appquarantine") == 1 || is_app_installed("cyanogenmod.superuser") == 1 || is_app_installed("com.devadvance.rootcloakplus") == 1) ? "0" : "4322";
+        return (
+                hasSuperuserApk() ||
+                is_app_installed("com.noshufou.android.su") == 1 ||
+                is_app_installed("com.thirdparty.superuser") == 1 ||
+                is_app_installed("eu.chainfire.supersu") == 1 ||
+                is_app_installed("com.koushikdutta.superuser") == 1 ||
+                is_app_installed("com.zachspong.temprootremovejb") == 1 ||
+                is_app_installed("com.ramdroid.appquarantine") == 1 ||
+                is_app_installed("cyanogenmod.superuser") == 1 ||
+                is_app_installed("com.devadvance.rootcloakplus") == 1
+        ) ? "0" : "4322";
     }
 
     public static String get_getNetworkType() {
@@ -579,12 +666,14 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
                 // No connection available
                 return "none";
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 // No connection available
                 Log.d("DeviceNetwork", e.getMessage());
                 return "none";
             }
-        } else {
+        }
+        else {
             ConnectivityManager connManager = (ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE);
             try {
                 if (connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).isConnected()) {
@@ -599,7 +688,8 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                     // No connection available
                     return "none";
                 }
-            } catch (Exception e2) {
+            }
+            catch (Exception e2) {
                 // No connection available
                 Log.d("DeviceNetwork", e2.getMessage());
                 return "none";
@@ -608,16 +698,12 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     }
 
     public void onSensorChanged(SensorEvent event) {
-        switch (event.sensor.getType()) {
-            case Sensor.TYPE_ACCELEROMETER:
-                if (event.values.length < 3) {
-                    return; // Who knows what this is
-                }
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            if (event.values.length < 3) {
+                return; // Who knows what this is
+            }
 
-                nativeOnAccelerometerUpdate(event.values[0], event.values[1], event.values[2]);
-                break;
-            default:
-                break;
+            nativeOnAccelerometerUpdate(event.values[0], event.values[1], event.values[2]);
         }
     }
 
@@ -631,25 +717,33 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         sensorManager.unregisterListener(this);
         if (hz > 0.0f) {
-            sensorManager.registerListener(app, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), sensorManager.SENSOR_DELAY_GAME);
+            sensorManager.registerListener(app, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
         }
     }
 
+    // Achievement handler (called from C++ class, and the actual handler is overriden in Main.java to do the actual app specific API call
     public void FireAchievement(String achievement) {
         Log.v("Achievement", "Firing in Wrong instance");
     }
 
+    // JNI to talk to Kiip
     public static void HandleAchievement(String achievement) {
         Log.v("Achievement", "Unlocked value: " + achievement);
         app.FireAchievement(achievement);
     }
 
+    /**
+     * The listener that listen to events from the accelerometer listener
+     */
+
+    // JNI to open_url
     public static void LaunchURL(String url) {
         Intent intent = new Intent("android.intent.action.VIEW");
         intent.setData(Uri.parse(url));
         try {
             app.startActivity(intent);
-        } catch (ActivityNotFoundException unused) {
+        }
+        catch (ActivityNotFoundException unused) {
             Log.v("LaunchURL", "Couldn't find activity to launch URL!");
         }
     }
@@ -680,43 +774,60 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         m_editText.setMaxLines(3);
         m_editText.setBackgroundColor(-1);
         m_editText.setTextColor(ViewCompat.MEASURED_STATE_MASK);
-        try {
-            m_editText.setTextIsSelectable(true);
-        } catch (NoSuchMethodError unused) {
-            /* ~ */
-        }
+        m_editText.setTextIsSelectable(true);
 
         RegisterLayoutChangeCallback();
         CreateEditBoxBG();
         UpdateEditBoxInView(false, true);
     }
 
-    private void RegisterLayoutChangeCallback() {
-        mViewGroup.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-            Rect rect = new Rect();
-            getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
-            m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
-            if (m_KeyBoardHeight > 0 && !m_editText.isFocused()) {
-                Log.d("NIRMAN", "KeyboardX opening...");
-                UpdateEditBoxInView(true, false);
-            }
-            else if (m_KeyBoardHeight == 0 && m_editText.isFocused()) {
-                Log.d("NIRMAN", "KeyboardX closing...");
-                if (!passwordField && !m_canShowCustomKeyboard) {
-                    nativeOnKey(1, VIRTUAL_KEY_BACK, 0);
-                }
+    private void CreateEditBoxBG() {
+        m_editTextRoot = new RelativeLayout(this);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                m_editText.getMeasuredHeight());
+        layoutParams.addRule(12);
+        layoutParams.setMargins(0, 0, 0, m_KeyBoardHeight);
+        m_editTextRoot.setLayoutParams(layoutParams);
+        m_editTextRoot.setBackgroundColor(Color.parseColor("#e5e5e7"));
 
-                nativeCancelBtnPressed();
-                UpdateEditBoxInView(false, false);
-                if (Looper.myLooper() != Looper.getMainLooper()) {
-                    nativeUpdateConsoleLogPos((float) m_KeyBoardHeight);
-                }
-            }
-
-            if (m_editText.isFocused()) {
-                UpdateEditBoxRootViewPosition();
-            }
+        m_DoneButton = new Button(this);
+        m_DoneButton.setOnClickListener(view -> {
+            ((InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+            nativeOnKey(1, 13, 13);
+            Log.d(PackageName, "Done button pressed.");
+            mGLView.requestFocus();
         });
+
+        m_CancelButton = new Button(this);
+        m_CancelButton.setOnClickListener(view -> {
+            nativeCancelBtnPressed();
+            toggle_keyboard(false);
+        });
+
+        mViewGroup.addView(m_editTextRoot);
+
+        m_editTextRoot.addView(m_editText);
+        m_editTextRoot.addView(m_DoneButton);
+        m_editTextRoot.addView(m_CancelButton);
+
+        m_editText.measure(0, 0);
+    }
+
+    private void RemoveEditBoxBG() {
+        if (m_editTextRoot != null && m_editTextRoot.getParent() != null) {
+            ((ViewGroup) m_editTextRoot.getParent()).removeView(m_editTextRoot);
+        }
+
+        Button doneButton = m_DoneButton;
+        if (doneButton != null && doneButton.getParent() != null) {
+            ((ViewGroup) doneButton.getParent()).removeView(m_DoneButton);
+        }
+
+        Button cancelButton = m_CancelButton;
+        if (cancelButton != null && cancelButton.getParent() != null) {
+            ((ViewGroup) cancelButton.getParent()).removeView(m_DoneButton);
+        }
     }
 
     public void ChangeEditBoxProperty() {
@@ -732,113 +843,12 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         });
     }
 
-    private void UpdateEditBoxRootViewPosition() {
-        m_editText.measure(0, 0);
-        int measuredHeight = m_editText.getMeasuredHeight();
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(-1, measuredHeight);
-        layoutParams.addRule(12);
-        layoutParams.setMargins(0, 0, 0, m_KeyBoardHeight);
-        m_editTextRoot.setLayoutParams(layoutParams);
-        if (Looper.myLooper() != Looper.getMainLooper()) {
-            nativeUpdateConsoleLogPos((float) (m_KeyBoardHeight + measuredHeight));
-        }
-    }
+    private void UpdateEditBoxInView(boolean showEditTextBox, boolean unk) {
+        setViewVisibility(m_editTextRoot, showEditTextBox);
 
-    private void UpdateRelativeElementsPosition() {
-        float nativeGetScreenWidth = (float) ((int) nativeGetScreenWidth());
-        int i = (int) (nativeGetScreenWidth * 0.12f);
-        m_editText.measure(0, 0);
-        int measuredHeight = m_editText.getMeasuredHeight();
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams((int) (0.7f * nativeGetScreenWidth), measuredHeight);
-        layoutParams.addRule(9);
-        layoutParams.setMargins((int) nativeGetEditBoxOffset(), 0, 0, 0);
-        m_editText.setLayoutParams(layoutParams);
-        EditText editText = m_editText;
-        editText.setSelection(editText.getText().length());
-        RelativeLayout.LayoutParams layoutParams2 = new RelativeLayout.LayoutParams(i, measuredHeight);
-        layoutParams2.addRule(11);
-        layoutParams2.setMargins(0, 0, i, 0);
-        m_DoneButton.setLayoutParams(layoutParams2);
-        m_DoneButton.setBackgroundColor(0);
-        m_DoneButton.setTextColor(Color.parseColor("#5c5ac7"));
-        m_DoneButton.setText(R.string.textedit_done);
-        RelativeLayout.LayoutParams layoutParams3 = new RelativeLayout.LayoutParams(i, measuredHeight);
-        layoutParams3.addRule(11);
-        layoutParams3.setMargins(0, 0, 0, 0);
-        m_CancelButton.setLayoutParams(layoutParams3);
-        m_CancelButton.setBackgroundColor(0);
-        m_CancelButton.setTextColor(Color.parseColor("#5c5ac7"));
-        m_CancelButton.setText(R.string.textedit_cancel);
-    }
-
-    private void CreateEditBoxBG() {
-        m_editTextRoot = new RelativeLayout(this);
-        m_DoneButton = new Button(this);
-        m_CancelButton = new Button(this);
-        mViewGroup.addView(m_editTextRoot);
-        m_editTextRoot.addView(m_editText);
-        m_editTextRoot.addView(m_DoneButton);
-        m_editTextRoot.addView(m_CancelButton);
-        m_editText.measure(0, 0);
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(-1, m_editText.getMeasuredHeight());
-        layoutParams.addRule(12);
-        layoutParams.setMargins(0, 0, 0, m_KeyBoardHeight);
-        m_editTextRoot.setBackgroundColor(Color.parseColor("#e5e5e7"));
-        m_editTextRoot.setLayoutParams(layoutParams);
-        m_DoneButton.setOnClickListener(view -> {
-            ((InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
-            nativeOnKey(1, 13, 13);
-            Log.d(PackageName, "Done button pressed.");
-            mGLView.requestFocus();
-        });
-
-        m_CancelButton.setOnClickListener(view -> {
-            nativeCancelBtnPressed();
-            toggle_keyboard(false);
-        });
-    }
-
-    private void RemoveEditBoxBG() {
-        ViewGroup viewGroup;
-        ViewGroup viewGroup2;
-        ViewGroup viewGroup3;
-        RelativeLayout relativeLayout = m_editTextRoot;
-        if (!(relativeLayout == null || (viewGroup3 = (ViewGroup) relativeLayout.getParent()) == null)) {
-            viewGroup3.removeView(m_editTextRoot);
-        }
-
-        Button button = m_DoneButton;
-        if (!(button == null || (viewGroup2 = (ViewGroup) button.getParent()) == null)) {
-            viewGroup2.removeView(m_DoneButton);
-        }
-
-        Button button2 = m_CancelButton;
-        if (button2 != null && (viewGroup = (ViewGroup) button2.getParent()) != null) {
-            viewGroup.removeView(m_CancelButton);
-        }
-    }
-
-    public static void setViewVisibility(View view, boolean visible) {
-        if (visible) {
-            view.setVisibility(View.VISIBLE);
-        } else {
-            view.setVisibility(View.INVISIBLE);
-        }
-
-        if (view instanceof ViewGroup) {
-            ViewGroup viewGroup = (ViewGroup) view;
-            for (int i = 0; i < viewGroup.getChildCount(); i++) {
-                setViewVisibility(viewGroup.getChildAt(i), visible);
-            }
-        }
-    }
-
-    private void UpdateEditBoxInView(boolean z, boolean z2) {
-        setViewVisibility(m_editTextRoot, z);
-        if (z) {
+        if (showEditTextBox) {
             m_editText.setText(m_text_default);
-            EditText editText = m_editText;
-            editText.setSelection(editText.getText().length());
+            m_editText.setSelection(m_editText.getText().length());
             Log.d("NIRMAN", "UpdateEditBoxInView Enabling EditBox. ");
             maxLength = -1;
             UpdateRelativeElementsPosition();
@@ -846,12 +856,13 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             m_editText.requestFocus();
             return;
         }
-        if (z2) {
-            m_editText.setText(BuildConfig.FLAVOR);
-            EditText editText2 = m_editText;
-            editText2.setSelection(editText2.getText().length());
+
+        if (unk) {
+            m_editText.setText("");
+            m_editText.setSelection(m_editText.getText().length());
             Log.d("NIRMAN", "UpdateEditBoxInView Disabling EditBox. ");
         }
+
         m_editText.setFocusable(false);
     }
 
@@ -862,7 +873,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
         try {
             m_editText.setOnKeyListener((view, keyCode, keyEvent) -> {
-                if (keyEvent.getAction() != 0 || keyCode != 66) {
+                if (keyEvent.getAction() != 0 || keyCode != KeyEvent.KEYCODE_ENTER) {
                     return false;
                 }
 
@@ -894,8 +905,8 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                 return false;
             });
         }
-        catch (NoClassDefFoundError e2) {
-            Log.d(PackageName, "setOnEditorActionListener(> Avoided crash. " + e2);
+        catch (NoClassDefFoundError e) {
+            Log.d(PackageName, "setOnEditorActionListener(> Avoided crash. " + e);
         }
 
         m_editText.addTextChangedListener(new TextWatcher() {
@@ -932,6 +943,86 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
                     m_before = s.toString();
                 }
+            }
+        });
+    }
+
+    private void UpdateEditBoxRootViewPosition() {
+        m_editText.measure(0, 0);
+
+        int measuredHeight = m_editText.getMeasuredHeight();
+
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                measuredHeight);
+        layoutParams.addRule(12);
+        layoutParams.setMargins(0, 0, 0, m_KeyBoardHeight);
+        m_editTextRoot.setLayoutParams(layoutParams);
+
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            nativeUpdateConsoleLogPos((float) (m_KeyBoardHeight + measuredHeight));
+        }
+    }
+
+    private void UpdateRelativeElementsPosition() {
+        m_editText.measure(0, 0);
+
+        float nativeGetScreenWidth = (float) ((int) nativeGetScreenWidth());
+        int measuredHeight = m_editText.getMeasuredHeight();
+
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+                (int) (0.7f * nativeGetScreenWidth),
+                m_editText.getMeasuredHeight());
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        layoutParams.setMargins((int) nativeGetEditBoxOffset(), 0, 0, 0);
+        m_editText.setLayoutParams(layoutParams);
+        m_editText.setSelection(m_editText.getText().length());
+
+       layoutParams = new RelativeLayout.LayoutParams(
+                (int) (nativeGetScreenWidth * 0.12f),
+                measuredHeight);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        layoutParams.setMargins(0, 0, (int) (nativeGetScreenWidth * 0.12f), 0);
+        m_DoneButton.setLayoutParams(layoutParams);
+        m_DoneButton.setBackgroundColor(0);
+        m_DoneButton.setTextColor(Color.parseColor("#5c5ac7"));
+        m_DoneButton.setText(R.string.textedit_done);
+
+        RelativeLayout.LayoutParams layoutParams3 = new RelativeLayout.LayoutParams(
+                (int) (nativeGetScreenWidth * 0.12f),
+                measuredHeight);
+        layoutParams3.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        layoutParams3.setMargins(0, 0, 0, 0);
+        m_CancelButton.setLayoutParams(layoutParams3);
+        m_CancelButton.setBackgroundColor(0);
+        m_CancelButton.setTextColor(Color.parseColor("#5c5ac7"));
+        m_CancelButton.setText(R.string.textedit_cancel);
+    }
+
+    private void RegisterLayoutChangeCallback() {
+        mViewGroup.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            Rect rect = new Rect();
+            getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
+            m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
+            if (m_KeyBoardHeight > 0 && !m_editText.isFocused()) {
+                Log.d("NIRMAN", "KeyboardX opening...");
+                UpdateEditBoxInView(true, false);
+            }
+            else if (m_KeyBoardHeight == 0 && m_editText.isFocused()) {
+                Log.d("NIRMAN", "KeyboardX closing...");
+                if (!passwordField && !m_canShowCustomKeyboard) {
+                    nativeOnKey(1, VIRTUAL_KEY_BACK, 0);
+                }
+
+                nativeCancelBtnPressed();
+                UpdateEditBoxInView(false, false);
+                if (Looper.myLooper() != Looper.getMainLooper()) {
+                    nativeUpdateConsoleLogPos((float) m_KeyBoardHeight);
+                }
+            }
+
+            if (m_editText.isFocused()) {
+                UpdateEditBoxRootViewPosition();
             }
         });
     }
@@ -997,6 +1088,22 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         m_canShowCustomKeyboard = true;
         m_focusOnKeyboard = false;
         Log.d("Msg", "Disabling keyboard");
+    }
+
+    public static void setViewVisibility(View view, boolean visible) {
+        if (visible) {
+            view.setVisibility(View.VISIBLE);
+        }
+        else {
+            view.setVisibility(View.INVISIBLE);
+        }
+
+        if (view instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                setViewVisibility(viewGroup.getChildAt(i), visible);
+            }
+        }
     }
 
     // From MessageManager.h
@@ -1156,10 +1263,12 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         return false;
     }
 
+    @Override
     public boolean onKeyMultiple(int keyCode, int count, KeyEvent keyEvent) {
         return super.onKeyMultiple(keyCode, count, keyEvent);
     }
 
+    @Override
     public boolean onKeyDown(int keyCode, KeyEvent keyEvent) {
         Log.v("onKeyDown", "onKeyDown Keydown Got " + keyCode + " " + Character.toChars(keyEvent.getUnicodeChar())[0]);
         if (keyCode == KeyEvent.KEYCODE_DEL) {
@@ -1173,17 +1282,19 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         if (keyEvent.isAltPressed() && keyCode == KeyEvent.KEYCODE_BACK) {
             // XPeria's O button, not the back button!
             nativeOnKey(1, VIRTUAL_DPAD_BUTTON_RIGHT, keyEvent.getUnicodeChar());
-            return true;
+            return true; // Signal that we handled it
         }
         else if (keyCode == KeyEvent.KEYCODE_BACK) {
-            nativeOnKey(1, VIRTUAL_KEY_BACK, keyEvent.getUnicodeChar());
-            return true;
+            nativeOnKey(1, VIRTUAL_KEY_BACK, keyEvent.getUnicodeChar()); // 1 means keydown
+            return true; // Signal that we handled it
         }
 
-        nativeOnKey(1, TranslateKeycodeToProtonVirtualKey(keyCode), (char) keyEvent.getUnicodeChar());
+        int vKey = TranslateKeycodeToProtonVirtualKey(keyCode);
+        nativeOnKey(1, vKey, (char) keyEvent.getUnicodeChar()); // 1 means keydown
         return super.onKeyDown(keyCode, keyEvent);
     }
 
+    @Override
     public boolean onKeyUp(int keyCode, KeyEvent keyEvent) {
         Log.v("onKeyUp", "Keyup Got " + keyCode + " " + Character.toChars(keyEvent.getUnicodeChar())[0]);
         if (keyCode == KeyEvent.KEYCODE_DEL) {
@@ -1193,29 +1304,32 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         if (keyEvent.isAltPressed() && keyCode == KeyEvent.KEYCODE_BACK) {
             // XPeria's O button, not the back button!
             nativeOnKey(0, VIRTUAL_DPAD_BUTTON_RIGHT, keyEvent.getUnicodeChar());
-            return true;
+            return true; // Signal that we handled it
         }
         else if (keyCode == KeyEvent.KEYCODE_BACK) {
-            nativeOnKey(0, VIRTUAL_KEY_BACK, keyEvent.getUnicodeChar());
-            return true;
+            nativeOnKey(0, VIRTUAL_KEY_BACK, keyEvent.getUnicodeChar()); // 0 is type keyup
+            return true; // Signal that we handled it
         }
 
-        nativeOnKey(0, TranslateKeycodeToProtonVirtualKey(keyCode), (char) keyEvent.getUnicodeChar());
+        int vKey = TranslateKeycodeToProtonVirtualKey(keyCode);
+        nativeOnKey(0, vKey, (char) keyEvent.getUnicodeChar()); // 0 is type keyup
         return super.onKeyUp(keyCode, keyEvent);
     }
 
     // Straight version
     public void sendVersionDetails() {
         try {
-            nativeSendGUIStringEx(MESSAGE_TYPE_APP_VERSION, 0, 0, 0, getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
-        } catch (PackageManager.NameNotFoundException e) {
+            PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            nativeSendGUIStringEx(MESSAGE_TYPE_APP_VERSION, 0, 0, 0, packageInfo.versionName);
+        }
+        catch (PackageManager.NameNotFoundException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
             Log.d(PackageName, "Cannot load App Version!");
         }
     }
 
-    // TAPJOY, Depcrecated - ZTz
-
+    // TAPJOY
     /*public void getFullScreenAdResponse() {
         Log.i(PackageName, "Displaying Full Screen Ad..");
     }
@@ -1668,6 +1782,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             }
         });
     }
+    //***************************
+
+    //************** SOUND STUFF *************
 
     // JNI to play music, etc
     public MediaPlayer _music = null;
@@ -1675,8 +1792,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     private static class MusicFadeOutThread extends Thread {
         private final int m_duration;
 
-        public MusicFadeOutThread(int i) {
-            m_duration = i;
+        public MusicFadeOutThread(int duration) {
+            super();
+            m_duration = duration;
         }
 
         public void run() {
@@ -1690,9 +1808,11 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                     app._music.setVolume(phase  * m_lastMusicVol, phase  * m_lastMusicVol);
                     remainingSteps--;
                 }
+
                 try {
                     Thread.sleep(volumeChangeInterval);
-                } catch (InterruptedException unused) {
+                }
+                catch (InterruptedException unused) {
                     return;
                 }
             }
@@ -1724,10 +1844,12 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                 app._music.prepare();
                 music_set_volume(m_lastMusicVol);
                 app._music.start();
-            } catch (IOException unused) {
+            }
+            catch (IOException unused) {
                 String packageName = app.getPackageName();
                 Log.d(packageName, "Can't load music (raw) filename: " + fname);
-            } catch (IllegalStateException unused2) {
+            }
+            catch (IllegalStateException unused2) {
                 String packageName2 = app.getPackageName();
                 Log.d(packageName2, "Can't load music (raw), illegal state filename: " + fname);
                 app._music.reset();
@@ -1744,12 +1866,15 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             app._music.prepare();
             music_set_volume(m_lastMusicVol);
             app._music.start();
-        } catch (IOException unused3) {
+        }
+        catch (IOException unused3) {
             Log.d(app.getPackageName(), "Can't load music. filename: " + fname);
-        } catch (IllegalStateException unused4) {
+        }
+        catch (IllegalStateException unused4) {
             Log.d(app.getPackageName(), "Can't load music, illegal state. filename: " + fname);
             app._music.reset();
-        } catch (PackageManager.NameNotFoundException e) {
+        }
+        catch (PackageManager.NameNotFoundException e) {
             Log.d(app.getPackageName(), "Can't load music, Growtopia assets not found? filename: " + fname);
         }
     }
@@ -1760,7 +1885,8 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                 try {
                     app.musicFadeOutThread.interrupt();
                     app.musicFadeOutThread.join();
-                } catch (InterruptedException unused) {
+                }
+                catch (InterruptedException unused) {
                     /* ~ */
                 }
             }
@@ -1770,16 +1896,13 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     }
 
     public static synchronized void music_fadeout(int duration) {
-        if (app._music != null) {
-            if (app._music.isPlaying()) {
-                if (duration <= 0) {
-                    music_stop();
-                } else {
-                    if (app.musicFadeOutThread == null || !app.musicFadeOutThread.isAlive()) {
-                        app.musicFadeOutThread = new MusicFadeOutThread(duration);
-                        app.musicFadeOutThread.start();
-                    }
-                }
+        if (app._music != null && app._music.isPlaying()) {
+            if (duration <= 0) {
+                music_stop();
+            }
+            else if (app.musicFadeOutThread == null || !app.musicFadeOutThread.isAlive()) {
+                app.musicFadeOutThread = new MusicFadeOutThread(duration);
+                app.musicFadeOutThread.start();
             }
         }
     }
@@ -1791,8 +1914,19 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         }
     }
 
+    @SuppressLint("MissingPermission")
     public static synchronized void vibrate(int vibMS) {
-        ((Vibrator) app.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(vibMS);
+        if (requestPermission("VIBRATE")) {
+            Vibrator vibrator = ((Vibrator) app.getSystemService(Context.VIBRATOR_SERVICE));
+            if (vibrator != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(vibMS, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    // Deprecated in API 26
+                    vibrator.vibrate(vibMS);
+                }
+            }
+        }
     }
 
     public static synchronized int music_get_pos() {
@@ -1812,10 +1946,10 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     public static synchronized void music_set_pos(int positionMS) {
         if (app._music == null) {
             Log.d(app.getPackageName(), "warning: music_set_position: no music playing, can't set position");
+            return;
         }
-        else {
-            app._music.seekTo(positionMS);
-        }
+
+        app._music.seekTo(positionMS);
     }
 
     // JNI to play sounds
@@ -1833,20 +1967,19 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                         .setAudioAttributes(audioAttributes)
                         .setMaxStreams(8)
                         .build();
+
+                return;
             }
-            else {
-                app._sounds = new SoundPool(8, AudioManager.STREAM_MUSIC, 1);
-            }
+
+            app._sounds = new SoundPool(8, AudioManager.STREAM_MUSIC, 1);
         }
     }
 
     public static synchronized void sound_destroy() {
-        if (app._sounds == null) {
-            sound_init();
+        if (app._sounds != null) {
+            app._sounds.release();
+            app._sounds = null;
         }
-
-        app._sounds.release();
-        app._sounds = null;
     }
 
     public static synchronized int sound_load(String sound) {
@@ -1863,9 +1996,11 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             Context growtopiaContext = app.createPackageContext("com.rtsoft.growtopia", 0);
             AssetFileDescriptor openFd = growtopiaContext.getAssets().openFd(sound);
             return app._sounds.load(openFd.getFileDescriptor(), openFd.getStartOffset(), openFd.getLength(), 1);
-        } catch (IOException unused) {
+        }
+        catch (IOException unused) {
             Log.d("Can't load sound", sound);
-        } catch (PackageManager.NameNotFoundException unused2) {
+        }
+        catch (PackageManager.NameNotFoundException unused2) {
             Log.d("Can't load sound", "Growtopia assets not found? sound: " + sound);
         }
 
@@ -1912,16 +2047,53 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         app._sounds.setRate(streamID, rate);
     }
 
-    public static void _OpenCSTS(String str, String str2, String str3, boolean z, String str4, String str5, String str6) {
+    public static void _OpenCSTS(String cstsuid, String country, String language, boolean payer,
+                                 String ingameplayerid, String environment, String misc) {
         Intent intent = new Intent(app.getApplicationContext(), CSTSWebViewActivity.class);
-        intent.putExtra("cstsuid", str);
-        intent.putExtra("country", str2);
-        intent.putExtra("language", str3);
-        intent.putExtra("payer", z);
-        intent.putExtra("ingameplayerid", str4);
-        intent.putExtra("environment", str5);
-        intent.putExtra("misc", str6);
+        intent.putExtra("cstsuid", cstsuid);
+        intent.putExtra("country", country);
+        intent.putExtra("language", language);
+        intent.putExtra("payer", payer);
+        intent.putExtra("ingameplayerid", ingameplayerid);
+        intent.putExtra("environment", environment);
+        intent.putExtra("misc", misc);
         app.startActivity(intent);
+    }
+
+    public static boolean requestPermission(String name) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            // Not necessary, asked on install already
+            return true;
+        }
+
+        if (name.equals("RECORD_AUDIO")) {
+            if (ContextCompat.checkSelfPermission(app, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                app.requestPermissions(new String[] { Manifest.permission.RECORD_AUDIO }, 1);
+                return false;
+            }
+        }
+
+        if (name.equals("CAMERA")) {
+            if (ContextCompat.checkSelfPermission(app, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                app.requestPermissions(new String[] { Manifest.permission.CAMERA }, 2);
+                return false;
+            }
+        }
+
+        if (name.equals("VIBRATE")) {
+            if (ContextCompat.checkSelfPermission(app, Manifest.permission.VIBRATE) != PackageManager.PERMISSION_GRANTED) {
+                app.requestPermissions(new String[] { Manifest.permission.VIBRATE }, 3);
+                return false;
+            }
+        }
+
+        if (name.equals("ACCESS_FINE_LOCATION")) {
+            if (ContextCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                app.requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION }, 4);
+                return false;
+            }
+        }
+        return true;
     }
 
     public GLSurfaceView mGLView;

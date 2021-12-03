@@ -20,10 +20,6 @@ class CSTSWebViewClient extends WebViewClient {
         void onCSExit();
     }
 
-    public boolean isInCreateAccount() {
-        return _isInCreateAccount;
-    }
-
     public void onLoadResource(WebView webView, String str) {
         if (str.contains("Default/CreateAccount?appId")) {
             _isInCreateAccount = true;
@@ -71,21 +67,29 @@ class CSTSWebViewClient extends WebViewClient {
                 cSTSWebViewClientCallback.onCSExit();
             }
             return true;
-        } else if (str.contains("legal.ubi.com")) {
+        }
+        else if (str.contains("legal.ubi.com")) {
             webView.getContext().startActivity(new Intent("android.intent.action.VIEW", Uri.parse(str)));
             return true;
-        } else {
-            boolean z = false;
+        }
+        else {
+            boolean ticketStatus = false;
             if (str.startsWith("ticket://")) {
                 Log.v("cstslog", "Ticket detected");
                 if (str.charAt(9) == '1') {
-                    z = true;
+                    ticketStatus = true;
                 }
-                Log.v("cstslog", "Ticket creation status: " + z + " detail: " + str.substring(11));
+
+                Log.v("cstslog", "Ticket creation status: " + ticketStatus + " detail: " + str.substring(11));
                 return true;
             }
+
             _isInCreateAccount = false;
             return false;
         }
+    }
+
+    public boolean isInCreateAccount() {
+        return _isInCreateAccount;
     }
 }
