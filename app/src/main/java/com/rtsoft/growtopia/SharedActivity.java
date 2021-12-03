@@ -409,39 +409,34 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     protected synchronized void onPause() {
         Log.d(PackageName, "onPause...");
+        if (!isInFloatingMode) {
+            InputMethodManager inputMethodManager = (InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (mGLView != null) {
+                inputMethodManager.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+            }
 
-        if (isInFloatingMode) {
-            super.onPause();
-            return;
+            if (m_editText != null) {
+                m_editText.setText("");
+                inputMethodManager.hideSoftInputFromWindow(m_editText.getWindowToken(), 0);
+            }
+
+            UpdateEditBoxInView(false, false);
         }
-
-        InputMethodManager inputMethodManager = (InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (mGLView != null) {
-            inputMethodManager.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
-        }
-
-        if (m_editText != null) {
-            m_editText.setText("");
-            inputMethodManager.hideSoftInputFromWindow(m_editText.getWindowToken(), 0);
-        }
-
-        UpdateEditBoxInView(false, false);
 
         float hzTemp = accelHzSave;
         setup_accel(0.0f);
         accelHzSave = hzTemp;
-        mGLView.onPause();
+        if (!isInFloatingMode) {
+            mGLView.onPause();
+        }
         super.onPause();
     }
 
     protected synchronized void onResume() {
-        if (isInFloatingMode) {
-            super.onResume();
-            return;
-        }
-
         music_set_volume(m_lastMusicVol);
-        mGLView.onResume();
+        if (!isInFloatingMode) {
+            mGLView.onResume();
+        }
         setup_accel(accelHzSave);
         super.onResume();
     }
