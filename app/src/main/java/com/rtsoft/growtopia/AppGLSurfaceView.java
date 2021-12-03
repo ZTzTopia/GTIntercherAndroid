@@ -71,7 +71,7 @@ class AppGLSurfaceView extends GLSurfaceView {
             app.showDialog(0);
         }
 
-        FloatingService.updateViewLayout(motionEvent, false);
+        FloatingService.updateViewLayout(motionEvent);
 
         if (mMultiTouchClassAvailable) {
             return WrapSharedMultiTouchInput.OnInput(motionEvent);

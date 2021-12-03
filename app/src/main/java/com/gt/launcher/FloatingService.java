@@ -1,5 +1,6 @@
 package com.gt.launcher;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -32,19 +33,16 @@ public class FloatingService extends Service {
         return null;
     }
 
+    @SuppressLint({"ClickableViewAccessibility", "InflateParams"})
     @Override
     public void onCreate() {
         super.onCreate();
 
-        /*
-         * Yes, I know, this is not readable code.
-         * TODO: Fix onTouch and keyboard.
-         */
-
+        // The root frame layout of floating window and start floating window button.
         mFrameLayout = new FrameLayout(this);
 
         mFloatingWidget = LayoutInflater.from(this).inflate(R.layout.layout_floating_widget, null);
-        mFloatingWidget.setVisibility(View.INVISIBLE);
+        mFloatingWidget.setVisibility(View.GONE);
         mFloatingWidget.setAlpha(0.75f);
 
         // Button to start floating window.
@@ -67,21 +65,49 @@ public class FloatingService extends Service {
 
         imageView.setOnClickListener(v -> {
             if (mFloatingWidget.getVisibility() == View.VISIBLE) {
+                mWindowManager.removeView(mFrameLayout); // We need to remove the frame layout,
+                // So that the view can be added again.
+
+                // Hide the floating window.
+                setWindowManagerParams(true);
+                mFloatingWidget.setVisibility(View.GONE);
+
+                // Set the button border to visible.
                 imageView.setBackgroundResource(R.drawable.round_border_black);
-                mFloatingWidget.setVisibility(View.INVISIBLE);
+
+                // Content stuff.
                 mFloatingWidgetContent.removeView(SharedActivity.app.mGLView);
+                mFloatingWidgetContent.removeView(SharedActivity.m_editTextRoot);
                 SharedActivity.app.mViewGroup.addView(SharedActivity.app.mGLView);
+                SharedActivity.app.mViewGroup.addView(SharedActivity.m_editTextRoot);
+
+                // Reload the surface.
                 SharedActivity.app.mGLView.onPause();
-                new android.os.Handler().postDelayed(() -> SharedActivity.app.mGLView.onResume(), 500);
+                new android.os.Handler().postDelayed(() -> SharedActivity.app.mGLView.onResume(), 1000);
+
                 SharedActivity.app.isInFloatingMode = false;
             }
             else {
-                imageView.setBackgroundResource(R.drawable.round_border_transparent);
+                mWindowManager.removeView(mFrameLayout);// We need to remove the frame layout,
+                // So that the view can be added again.
+
+                // Show the floating window.
+                setWindowManagerParams(false);
                 mFloatingWidget.setVisibility(View.VISIBLE);
+
+                // Set the button border to transparent.
+                imageView.setBackgroundResource(R.drawable.round_border_transparent);
+
+                // Content stuff.
                 SharedActivity.app.mViewGroup.removeView(SharedActivity.app.mGLView);
+                SharedActivity.app.mViewGroup.removeView(SharedActivity.m_editTextRoot);
                 mFloatingWidgetContent.addView(SharedActivity.app.mGLView);
+                mFloatingWidgetContent.addView(SharedActivity.m_editTextRoot);
+
+                // Reload the surface.
                 SharedActivity.app.mGLView.onPause();
-                new android.os.Handler().postDelayed(() -> SharedActivity.app.mGLView.onResume(), 500);
+                new android.os.Handler().postDelayed(() -> SharedActivity.app.mGLView.onResume(), 1000);
+
                 SharedActivity.app.isInFloatingMode = true;
             }
         });
@@ -90,36 +116,18 @@ public class FloatingService extends Service {
         mFrameLayout.addView(mFloatingWidget);
         mFrameLayout.addView(imageView);
 
-        int layoutType;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            layoutType = WindowManager.LayoutParams.TYPE_PHONE;
-        }
-        else {
-            layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-        }
+        // Set window manager params.
+        setWindowManagerParams(true);
 
-        DisplayMetrics displayMetrics = getApplicationContext().getResources().getDisplayMetrics();
-        int widthPixels = displayMetrics.widthPixels;
-        int heightPixels = displayMetrics.heightPixels;
-        if (widthPixels < heightPixels) {
-            widthPixels = displayMetrics.heightPixels;
-            heightPixels = displayMetrics.widthPixels;
-        }
-
-        final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                (int) (((float) widthPixels) / 2.5f),
-                (int) (((float) heightPixels) / 2.0f),
-                layoutType,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT);
-
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 16; // Initial Position of window
-        params.y = 16; // Initial Position of window
-        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        mWindowManager.addView(mFrameLayout, params);
-
+        // Floating window content.
         mFloatingWidgetContent = mFloatingWidget.findViewById(R.id.id_floating_widget_content);
+
+        // Move floating window while drag at title bar.
+        RelativeLayout floatingWidgetTitleBar = mFloatingWidget.findViewById(R.id.id_floating_widget_title_bar);
+        floatingWidgetTitleBar.setOnTouchListener((v, motionEvent) -> {
+            updateViewLayout(motionEvent);
+            return true;
+        });
 
         // Need to set OnTouchListener to move if user touch and drag floating widget title.
     }
@@ -133,13 +141,43 @@ public class FloatingService extends Service {
         }
     }
 
+    private void setWindowManagerParams(boolean isHideMode) {
+        // Calculate the size of floating window.
+        DisplayMetrics displayMetrics = getApplicationContext().getResources().getDisplayMetrics();
+        int widthPixels = displayMetrics.widthPixels;
+        int heightPixels = displayMetrics.heightPixels;
+        if (widthPixels < heightPixels) {
+            widthPixels = displayMetrics.heightPixels;
+            heightPixels = displayMetrics.widthPixels;
+        }
+
+        widthPixels = (int) (((float) widthPixels) / 2.5f);
+        heightPixels = (int) (((float) heightPixels) / 2.0f);
+
+        // Set the params for the floating window.
+        final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                isHideMode ? 32 * 2 : widthPixels,
+                isHideMode ? 32 * 2 : heightPixels,
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_PHONE :
+                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                isHideMode ? WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE :
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                PixelFormat.TRANSLUCENT);
+
+        params.gravity = Gravity.TOP | Gravity.START;
+        params.x = 16; // Initial Position of window
+        params.y = 16; // Initial Position of window
+        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mWindowManager.addView(mFrameLayout, params);
+    }
+
     private static int initialX = 0;
     private static int initialY = 0;
     private static float initialTouchX = 0;
     private static float initialTouchY = 0;
 
-    public static void updateViewLayout(MotionEvent motionEvent, boolean isTitle) {
-        if (mFrameLayout == null) {
+    public static void updateViewLayout(MotionEvent motionEvent) {
+        if (mFrameLayout == null || mFloatingWidget.getVisibility() != View.VISIBLE) {
             return;
         }
 
@@ -157,12 +195,7 @@ public class FloatingService extends Service {
             case MotionEvent.ACTION_MOVE:
                 params.x = initialX + (int) (motionEvent.getRawX() - initialTouchX);
                 params.y = initialY + (int) (motionEvent.getRawY() - initialTouchY);
-                if (isTitle) {
-                    /* ~ */
-                }
-                else {
-                    mWindowManager.updateViewLayout(mFrameLayout, params);
-                }
+                mWindowManager.updateViewLayout(mFrameLayout, params);
                 break;
         }
     }

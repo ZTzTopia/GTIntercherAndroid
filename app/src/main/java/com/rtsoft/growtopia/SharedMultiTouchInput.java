@@ -2,6 +2,8 @@ package com.rtsoft.growtopia;
 
 import android.view.MotionEvent;
 
+import com.gt.launcher.FloatingService;
+
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -74,7 +76,12 @@ public class SharedMultiTouchInput {
             RemoveFinger(id);
         }
 
-        AppGLSurfaceView.nativeOnTouch(msg, x, y, fingerID );
+        if (app.isInFloatingMode) {
+            x *= 2.5f;
+            y *= 2.25f;
+        }
+
+        AppGLSurfaceView.nativeOnTouch(msg, x, y, fingerID);
     }
 
     // Based on code from http://stackoverflow.com/questions/5860879/android-motionevent-getactionindex-and-multitouch
