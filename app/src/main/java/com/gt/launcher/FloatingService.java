@@ -12,13 +12,16 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.Nullable;
 
+import com.rtsoft.growtopia.AppRenderer;
 import com.rtsoft.growtopia.SharedActivity;
 
 public class FloatingService extends Service {
@@ -139,7 +142,15 @@ public class FloatingService extends Service {
             return true;
         });
 
-        // Need to set OnTouchListener to move if user touch and drag floating widget title.
+        ImageView floatingCloseButton = mFloatingWidget.findViewById(R.id.id_floating_close_button);
+        floatingCloseButton.setAlpha(0.75f);
+        floatingCloseButton.setOnClickListener(v -> {
+            stopSelf();
+            if (mFloatingWidget != null) {
+                mWindowManager.removeView(mFrameLayout);
+            }
+            AppRenderer.finishApp();
+        });
     }
 
     @Override
@@ -147,7 +158,7 @@ public class FloatingService extends Service {
         super.onDestroy();
         stopSelf();
         if (mFloatingWidget != null) {
-            mWindowManager.removeView(mFloatingWidget);
+            mWindowManager.removeView(mFrameLayout);
         }
     }
 

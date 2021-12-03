@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-class AppRenderer implements GLSurfaceView.Renderer {
+public class AppRenderer implements GLSurfaceView.Renderer {
     static long m_gameTimer;
     static int m_timerLoopMS;
 
@@ -520,6 +520,16 @@ class AppRenderer implements GLSurfaceView.Renderer {
                 }
             }
         }
+    }
+
+    public static void finishApp() {
+        Log.v(SharedActivity.PackageName, "Finishing app from java side");
+        SharedActivity.bIsShuttingDown = true;
+        nativeDone();
+        Log.v(SharedActivity.PackageName, "Native shutdown");
+
+        // app.finish() will get called in the update handler called below, don't need to do it now
+        SharedActivity.app.mMainThreadHandler.post(SharedActivity.app.mUpdateMainThread);
     }
 
     private static native void nativeInit();
