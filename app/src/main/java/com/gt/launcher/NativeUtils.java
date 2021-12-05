@@ -11,10 +11,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+// https://github.com/alibaba/freeline/blob/master/freeline-runtime/src/main/java/com/antfortune/freeline/util/NativeUtils.java
 public class NativeUtils {
     private static final String TAG = "GTLauncherAndroid";
 
-    // https://github.com/alibaba/freeline/blob/master/freeline-runtime/src/main/java/com/antfortune/freeline/util/NativeUtils.java#L91
     public static void installNativeLibraryPath(ClassLoader classLoader, File folder, boolean reverse)
             throws Throwable {
         Log.i(TAG, "installNativeLibraryPath folder:" + folder.getAbsolutePath());

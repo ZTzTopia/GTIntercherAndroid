@@ -9,22 +9,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
-
-import com.rtsoft.growtopia.SharedActivity;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 
 public class Main extends Activity {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -36,6 +28,7 @@ public class Main extends Activity {
         System.loadLibrary("GrowtopiaFix");
 
         try {
+            // Check if the app is installed.
             getPackageManager().getPackageInfo("com.rtsoft.growtopia", 0);
 
             // Extract the library .apk file, i tested on my android 11 device the library is not in data/app/<path>/lib/<abi> anymore.
@@ -65,6 +58,7 @@ public class Main extends Activity {
             finish();
         }
         catch (PackageManager.NameNotFoundException e) {
+            // The app is not installed.
             Log.e("GTLauncherAndroid", "Growtopia application not found.");
             e.printStackTrace();
             runOnUiThread(new Runnable() {

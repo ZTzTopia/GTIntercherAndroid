@@ -12,9 +12,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -40,6 +38,12 @@ public class FloatingService extends Service {
     @SuppressLint({"ClickableViewAccessibility", "InflateParams"})
     @Override
     public void onCreate() {
+        /*
+         * I know the keyboard will not showing if u not press edittext.
+         * And yes i think i need to change the screen size if we in floating mode, so
+         * the text not bugged.
+         */
+
         mFloatingService = this;
         super.onCreate();
 
@@ -207,7 +211,6 @@ public class FloatingService extends Service {
             params.y = 16; // Reset Position of window
             params.width = (int) (32 * 2.5f);
             params.height = (int) (32 * 2.5f);
-            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         }
         else {
             // Calculate the size of floating window.
@@ -226,9 +229,9 @@ public class FloatingService extends Service {
             params.y = 16; // Reset Position of window
             params.width = widthPixels;
             params.height = heightPixels;
-
-            params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         }
+
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
 
         mWindowManager.removeView(mFrameLayout);
         mWindowManager.addView(mFrameLayout, params);

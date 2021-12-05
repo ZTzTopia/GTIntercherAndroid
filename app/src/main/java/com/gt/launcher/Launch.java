@@ -1,9 +1,7 @@
 package com.gt.launcher;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,18 +17,6 @@ import com.rtsoft.growtopia.SharedActivity;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import dalvik.system.BaseDexClassLoader;
-import dalvik.system.PathClassLoader;
 
 public class Launch extends SharedActivity {
     private static final String TAG = "GTLauncherAndroid";
