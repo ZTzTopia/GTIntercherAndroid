@@ -18,15 +18,65 @@ public class AnzuFullscreenActivity extends Activity {
     private FrameLayout frame;
     private View viewToAdd;
 
+    protected void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
+
+        requestWindowFeature(1);
+
+        frame = new FrameLayout(this);
+        frame.setBackgroundColor(0);
+
+        viewToAdd = setInterstitialActivity();
+        if (viewToAdd.getParent() != null) {
+            ((ViewGroup) viewToAdd.getParent()).removeView(viewToAdd);
+        }
+
+        frame.addView(viewToAdd, -1, -1);
+        getWindow().getDecorView().setSystemUiVisibility(4);
+
+        try {
+            setRequestedOrientation(orientationToRequest(true, true, getScreenOrientation()));
+        }
+        catch (IllegalStateException e) {
+            /* ~ */
+        }
+
+        setContentView(frame);
+    }
+
+    public void onDestroy() {
+        super.onDestroy();
+        unsetInterstitialActivity();
+    }
+
+    public void onStop() {
+        super.onStop();
+        frame.removeView(viewToAdd);
+        viewToAdd = null;
+    }
+
+    public void onBackPressed() {
+        interstitialCallback(TJAdUnitConstants.String.CLOSE);
+        super.onBackPressed();
+    }
+
     private void addCloseButton(int i, final byte[] bArr) {
-        new Handler(Looper.getMainLooper()).post(() -> {
-            ImageButton imageButton = new ImageButton(viewToAdd.getContext());
-            imageButton.setImageBitmap(BitmapFactory.decodeByteArray(bArr, 0, bArr.length));
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                ImageButton imageButton = new ImageButton(viewToAdd.getContext());
+                imageButton.setImageBitmap(BitmapFactory.decodeByteArray(bArr, 0, bArr.length));
+            }
         });
     }
 
     private void closeActivity() {
-        new Handler(Looper.getMainLooper()).post(this::finish);
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                finish();
+            }
+        });
     }
 
     private int getScreenOrientation() {
@@ -53,47 +103,6 @@ public class AnzuFullscreenActivity extends Activity {
         iArr[1] = 0;
         iArr[2] = i;
         return iArr[i2];
-    }
-
-    public void onBackPressed() {
-        interstitialCallback(TJAdUnitConstants.String.CLOSE);
-        super.onBackPressed();
-    }
-
-    protected void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
-
-        requestWindowFeature(1);
-
-        frame = new FrameLayout(this);
-        frame.setBackgroundColor(0);
-
-        viewToAdd = setInterstitialActivity();
-        if (viewToAdd.getParent() != null) {
-            ((ViewGroup) viewToAdd.getParent()).removeView(viewToAdd);
-        }
-
-        frame.addView(viewToAdd, -1, -1);
-        getWindow().getDecorView().setSystemUiVisibility(4);
-
-        try {
-            setRequestedOrientation(orientationToRequest(true, true, getScreenOrientation()));
-        } catch (IllegalStateException e) {
-            /* ~ */
-        }
-
-        setContentView(frame);
-    }
-
-    public void onDestroy() {
-        super.onDestroy();
-        unsetInterstitialActivity();
-    }
-
-    public void onStop() {
-        super.onStop();
-        frame.removeView(viewToAdd);
-        viewToAdd = null;
     }
 
     private static native void interstitialCallback(String str);

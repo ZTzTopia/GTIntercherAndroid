@@ -1,7 +1,8 @@
 package com.gt.launcher;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -10,21 +11,36 @@ import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
 import com.rtsoft.growtopia.SharedActivity;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import dalvik.system.BaseDexClassLoader;
+import dalvik.system.PathClassLoader;
 
 public class Launch extends SharedActivity {
+    private static final String TAG = "GTLauncherAndroid";
+
+    @SuppressLint("UnsafeDynamicallyLoadedCode")
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
-        Log.d("GTLauncher", "Launching growtopia..");
+        Log.d("GTLauncherAndroid", "Launching growtopia..");
 
         BASE64_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArv12FD/xxuAJ3/B8Jgx78985UN/FitcQD5C21eIS5D+98yr7dy9sw8R2fSTFZKExBZVAfatgDH7s6fb9vfHi43szfpdXs3ZL2hsa7DeCWRyVSTD6o/i14vgwInv1S/dgLAwQth3PDXWF+zYXOlL+umOt9K9eqQo5CZhkwl9JAmMHlazvbhSGAldV5QsdY3pK5wmg/w2873abgYsGdI3B9wL75kgZW9tV2O6efiIbXlevktGOMup3Ql2H4Rcpa3ZeDtGl+YTQbEUQTYiYBDtFGCyqksXeM6+kCnaF97Ss5wA0w5ID9WJLkziXI4iGBMRd0a7s+vVniwpx771oGcJxewIDAQAB";
-
         dllname = "growtopia";
         securityEnabled = false;
         IAPEnabled = true;
@@ -32,32 +48,66 @@ public class Launch extends SharedActivity {
         PackageName = "com.rtsoft.growtopia";
         if (!new File(Environment.getExternalStorageDirectory().toString() + File.separatorChar + "windows" + File.separatorChar + "BstSharedFolder").exists()) {
             try {
-                String libraryPath = getPackageManager().getPackageInfo(PackageName, 0)
-                        .applicationInfo
-                        .nativeLibraryDir;
-                System.load(libraryPath + "/lib" + dllname + ".so");
+                copyLibraryToDex(getExtractedLibraryPath() + "/libgrowtopia.so", "libgrowtopia.so");
+                copyLibraryToDex(getExtractedLibraryPath() + "/libanzu.so", "libanzu.so");
+                NativeUtils.installNativeLibraryPath(getClassLoader(),
+                        new File(getDir("dex", 0).getAbsolutePath()), false);
             }
-            catch (PackageManager.NameNotFoundException e) {
+            catch (Exception e) {
                 e.printStackTrace();
             }
+            catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
 
+            System.loadLibrary("anzu");
+            System.loadLibrary(dllname);
             super.onCreate(savedInstanceState);
-        }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(getApplicationContext(), "Overlay permission is required in order to show mod menu. Restart the game after you allow permission", Toast.LENGTH_LONG).show();
-            Toast.makeText(getApplicationContext(), "Overlay permission is required in order to show mod menu. Restart the game after you allow permission", Toast.LENGTH_LONG).show();
-            startActivity(new Intent("android.settings.action.MANAGE_OVERLAY_PERMISSION", Uri.parse("package:" + getPackageName())));
-            final Handler handler = new Handler();
-            handler.postDelayed(() -> System.exit(1), 5000);
-        }
-        else {
-            final Handler handler = new Handler();
-            handler.postDelayed(() -> startService(new Intent(Launch.this, FloatingService.class)), 500);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                makeToastUI("Overlay permission is required in order to show mod menu. Restart the game after you allow permission");
+                makeToastUI("Overlay permission is required in order to show mod menu. Restart the game after you allow permission");
+                startActivity(new Intent("android.settings.action.MANAGE_OVERLAY_PERMISSION", Uri.parse("package:" + getPackageName())));
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        finish();
+                        System.exit(1);
+                    }
+                }, 5000);
+            }
+            else {
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        startService(new Intent(Launch.this, FloatingService.class));
+                    }
+                }, 700);
+            }
         }
     }
 
-    public static boolean toggleKeyboard(boolean show, int max, String text, boolean isPassword) {
+    public void copyLibraryToDex(String pathWithFileName, String fileName) throws Exception {
+        FileInputStream open = new FileInputStream(pathWithFileName);
+        FileOutputStream fileOutputStream = new FileOutputStream(getDir("dex", 0).getAbsolutePath() + "/" + fileName);
+        byte[] bArr = new byte[1024];
+        int bytesRead = 0;
+        while (true) {
+            int read = open.read(bArr);
+            if (read <= 0) {
+                fileOutputStream.flush();
+                fileOutputStream.close();
+                open.close();
+                System.out.println("Writing " + bytesRead + " bytes");
+                return;
+            }
+
+            bytesRead += read;
+            fileOutputStream.write(bArr, 0, read);
+        }
+    }
+
+    public static boolean toggleKeyboard(boolean show, int maxLength, String defaultText, boolean isPassword) {
         if (show && !m_canShowCustomKeyboard) {
             app.makeToastUI("Can't show keyboard while another keyboard is showed.");
             return false;
@@ -65,9 +115,9 @@ public class Launch extends SharedActivity {
         else {
             if (show) {
                 SharedActivity.passwordField = isPassword;
-                SharedActivity.m_text_max_length = max;
-                SharedActivity.m_text_default = text;
-                SharedActivity.m_before = text;
+                SharedActivity.m_text_max_length = maxLength;
+                SharedActivity.m_text_default = defaultText;
+                SharedActivity.m_before = defaultText;
                 SharedActivity.updateText = true;
                 app.clearIngameInputBox();
                 app.ChangeEditBoxProperty();

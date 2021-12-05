@@ -1,19 +1,26 @@
 # GTLauncherAndroid
-A growtopia launcher for android.
+GTLauncherAndroid is a growtopia launcher LiKE nO oThER. Without having to update the launcher if the game is updated.
+
 ![](https://cdn.discordapp.com/attachments/488978346072604682/916262099997581342/unknown.png)
 ![](https://cdn.discordapp.com/attachments/488978346072604682/916261969798004736/unknown.png)
+
+## Features
+- Launch growtopia without having to update the launcher if the game is updated.
+- Floating Windows.
+
+## Coming Soon
+- None
 
 ## Requirements
 The following dependencies are required to build the library from source.
 - [Android Studio](https://developer.android.com/studio).
 
-For AIDE users (I'm not sure if this works 100%).
-- [AIDE CMods](https://secufiles.com/nE9J/AIDE_CMODs_3.2.200108.apk).
-- [NDK AIDE for arm32](https://www.mediafire.com/file/62l4gcxqsqtxy20/ndk_arm.tar.gz/file).
-- [NDK AIDE for arm64](https://www.mediafire.com/file/w56tbt9pmqxzmpu/ndk_arm64.tar.gz/file).
+For AIDE users: I've tried to fix all the errors in AIDE, but I can't get a satisfactory result. Because AIDE does not support AndroidX and lacks many features. Yes, even though I fixed AndroidX but still can't install the apk.
+Android is very slow when deleting and moving files it's very frustrating for me.
 
-There are many tutorials for installing on youtube, Attention if your android doesn't support arm then it won't work. one of them [AIDE CMods tutorial](https://youtu.be/VYvKEFHSgkg)
-
-## Installation
+## Building
 1. Build the source code.
-2. Profit.
+2. Install the application.
+3. Profit.
+
+**If you can't make it you can download the finished application on the release page.**

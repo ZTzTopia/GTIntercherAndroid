@@ -16,12 +16,18 @@
 
 // Fix for android 10-11 crash because of the wrong bundle prefix and bundle name (Package name).
 const char* GetBundlePrefix_hook() {
+#ifdef __arm__
     return "com.gt.";
+#elif __aarch64__
+    return "com.gt.launcher";
+#endif
 }
 
+#ifdef __arm__
 const char* GetBundleName_hook() {
     return "launcher";
 }
+#endif
 
 // Fix for printing blank message in the console.
 void (*LogMsg)(const char *msg, ...);
@@ -42,6 +48,7 @@ void LogMsg_hook(const char *msg, ...) {
     }
 
     __android_log_print(ANDROID_LOG_INFO,
+                        // GetAppName()
                         KittyMemory::callFunction<const char *>(GTS("_Z10GetAppNamev")), buffer);
 }
 
@@ -51,8 +58,10 @@ namespace game {
             // GetBundlePrefix()
             HOOK(GTS("_Z15GetBundlePrefixv"), (void *)GetBundlePrefix_hook, NULL);
 
+#ifdef __arm__
             // GetBundleName()
             HOOK(GTS("_Z13GetBundleNamev"), (void *)GetBundleName_hook, NULL);
+#endif
 
             // LogMsg()
             HOOK(GTS("_Z6LogMsgPKcz"), (void *)LogMsg_hook, (void **)&LogMsg);

@@ -1,5 +1,6 @@
 package com.anzu.sdk;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -18,6 +19,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
@@ -27,12 +29,15 @@ import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
+
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.rtsoft.growtopia.SharedActivity;
 import com.tapjoy.TapjoyConstants;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -75,7 +80,8 @@ public class Anzu {
                         type = activeNetworkInfo.getType();
                     }
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 /* ~ */
             }
 
@@ -93,11 +99,13 @@ public class Anzu {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     public static String Anzu_SetUpUserAgent() {
         String defaultUserAgent = "";
         try {
             defaultUserAgent = WebSettings.getDefaultUserAgent(appContext);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             Log.w("ANZU", "Could not get userAgent, " + e.getMessage());
         }
 
@@ -281,36 +289,20 @@ public class Anzu {
         return true;
     }
 
-    public static native void Error(String str);
-
     protected static Context GetContext() {
         return appContext;
     }
 
-    public static native void Log(String str);
-
-    public static native float MetricGet(String str);
-
-    public static native String MetricGetS(String str);
-
-    public static native void OnGotLocation(int i, float f, float f2);
-
-    public static native void OnReachabilityChanged(int i);
-
     public static void SetContext(final Context context) {
         appContext = context;
         Thread thread = new Thread() {
+            @SuppressLint("UnsafeDynamicallyLoadedCode")
+            @Override
             public void run() {
                 String str;
                 if (Anzu.appContext != null) {
                     try {
-                        try {
-                            PackageInfo packageInfo = SharedActivity.app.getPackageManager().getPackageInfo(SharedActivity.PackageName, 0);
-                            String libraryPath = packageInfo.applicationInfo.nativeLibraryDir;
-                            System.load(libraryPath + "/libanzu.so");
-                        } catch (PackageManager.NameNotFoundException e) {
-                            e.printStackTrace();
-                        }
+                        System.loadLibrary("anzu");
                     } catch (UnsatisfiedLinkError e) {
                         Log.println(Log.WARN, "ANZU", "failed loading anzu shared library, this is ok if using static libs");
                     }
@@ -369,9 +361,7 @@ public class Anzu {
     }
 
     public static native float SystemMetricGet(String str);
-
     public static native String SystemMetricGetS(String str);
-
     public static native long TextureNativeRendererGetRenderCallback(String str);
 
     private static Bitmap captureInterstitial() {
@@ -681,9 +671,10 @@ public class Anzu {
                 Class.forName("androidx.core.app.NotificationManagerCompat");
                 NotificationManagerCompat from = NotificationManagerCompat.from(appContext);
                 try {
-                    // TODO: Fix the warning :(
-                    Method method = NotificationManagerCompat.class.getMethod("areNotificationsEnabled", null);
-                    return Boolean.FALSE.equals(method.invoke(from, null));
+                    /*Method method = NotificationManagerCompat.class.getMethod("areNotificationsEnabled", null);
+                    return Boolean.FALSE.equals(method.invoke(from, null));*/
+                    Method method = NotificationManagerCompat.class.getMethod("areNotificationsEnabled");
+                    return Boolean.FALSE.equals(method.invoke(from));
                 } catch (NoSuchMethodException | SecurityException e2) {
                     return false;
                 }
@@ -801,13 +792,9 @@ public class Anzu {
         }
     }
 
-    private static native void sdkAndroidInit(String str, String str2, int i, String str3, String str4, String str5, String str6, String str7, String str8, int i2, int i3, Class cls, Class cls2);
-
     private static void setCancelWebTasks(boolean z) {
         shouldCancelWebTasks = z;
     }
-
-    private static native void setInterstitialView(View view);
 
     private static void showInterstitial() {
         if (!interstitialIsVisible) {
@@ -918,16 +905,27 @@ public class Anzu {
         return new HttpResponse_t(str6, str5);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private static String slurp(InputStream inputStream) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byte[] bArr = new byte[0x4000];
+        byte[] buffer = new byte[0x4000];
         while (true) {
-            int read = inputStream.read(bArr);
+            int read = inputStream.read(buffer);
             if (read == -1) {
                 return byteArrayOutputStream.toString(String.valueOf(StandardCharsets.UTF_8));
             }
 
-            byteArrayOutputStream.write(bArr, 0, read);
+            byteArrayOutputStream.write(buffer, 0, read);
         }
     }
+
+    public static native void Error(String str);
+    public static native void Log(String str);
+    public static native float MetricGet(String str);
+    public static native String MetricGetS(String str);
+    public static native void OnGotLocation(int i, float f, float f2);
+    public static native void OnReachabilityChanged(int i);
+
+    private static native void sdkAndroidInit(String str, String str2, int i, String str3, String str4, String str5, String str6, String str7, String str8, int i2, int i3, Class cls, Class cls2);
+    private static native void setInterstitialView(View view);
 }

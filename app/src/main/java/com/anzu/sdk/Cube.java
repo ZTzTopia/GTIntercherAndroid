@@ -1,4 +1,3 @@
-// TODO: Fix the code.
 package com.anzu.sdk;
 
 import java.lang.reflect.Array;
@@ -51,11 +50,11 @@ public class Cube<E> implements Iterable<E> {
 
     private static class NotImplementedException extends RuntimeException {
         private NotImplementedException() {
+            /* ~ */
         }
     }
 
-    /* access modifiers changed from: private */
-    public static class Content<T> {
+    private static class Content<T> {
         T value;
 
         private Content() {
@@ -71,34 +70,34 @@ public class Cube<E> implements Iterable<E> {
     }
 
     public static class Selection<T> implements Predicate<T>, Calculator<T>, Equality<T>, Comparator<T> {
-        @Override // com.anzu.sdk.Cube.Predicate
+        @Override
         public boolean predicate(T t, int i) {
             throw new NotImplementedException();
         }
 
-        @Override // com.anzu.sdk.Cube.Calculator
+        @Override
         public double calculate(T t, int i) {
             throw new NotImplementedException();
         }
 
-        @Override // com.anzu.sdk.Cube.Equality
+        @Override
         public boolean equals(T t, T t2) {
             throw new NotImplementedException();
         }
 
-        @Override // com.anzu.sdk.Cube.Comparator
+        @Override
         public int compareTo(T t, T t2) {
             throw new NotImplementedException();
         }
     }
 
     public static class Conversion<I, O> implements Convertible<I, O>, Classify<I, O> {
-        @Override // com.anzu.sdk.Cube.Convertible
+        @Override
         public O transform(I i, int i2) {
             throw new NotImplementedException();
         }
 
-        @Override // com.anzu.sdk.Cube.Classify
+        @Override
         public O groupBy(I i, int i2) {
             throw new NotImplementedException();
         }
@@ -107,7 +106,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Integer> forCount(int i) {
         Integer[] numArr = new Integer[i];
         for (int i2 = 0; i2 < i; i2++) {
-            numArr[i2] = Integer.valueOf(i2);
+            numArr[i2] = i2;
         }
         return from(numArr);
     }
@@ -115,7 +114,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Boolean> from(boolean... zArr) {
         Boolean[] boolArr = new Boolean[zArr.length];
         for (int i = 0; i < zArr.length; i++) {
-            boolArr[i] = Boolean.valueOf(zArr[i]);
+            boolArr[i] = zArr[i];
         }
         return from(boolArr);
     }
@@ -123,7 +122,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Byte> from(byte... bArr) {
         Byte[] bArr2 = new Byte[bArr.length];
         for (int i = 0; i < bArr.length; i++) {
-            bArr2[i] = Byte.valueOf(bArr[i]);
+            bArr2[i] = bArr[i];
         }
         return from(bArr2);
     }
@@ -131,7 +130,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Short> from(short... sArr) {
         Short[] shArr = new Short[sArr.length];
         for (int i = 0; i < sArr.length; i++) {
-            shArr[i] = Short.valueOf(sArr[i]);
+            shArr[i] = sArr[i];
         }
         return from(shArr);
     }
@@ -139,7 +138,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Integer> from(int... iArr) {
         Integer[] numArr = new Integer[iArr.length];
         for (int i = 0; i < iArr.length; i++) {
-            numArr[i] = Integer.valueOf(iArr[i]);
+            numArr[i] = iArr[i];
         }
         return from(numArr);
     }
@@ -147,7 +146,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Long> from(long... jArr) {
         Long[] lArr = new Long[jArr.length];
         for (int i = 0; i < jArr.length; i++) {
-            lArr[i] = Long.valueOf(jArr[i]);
+            lArr[i] = jArr[i];
         }
         return from(lArr);
     }
@@ -155,7 +154,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Float> from(float... fArr) {
         Float[] fArr2 = new Float[fArr.length];
         for (int i = 0; i < fArr.length; i++) {
-            fArr2[i] = Float.valueOf(fArr[i]);
+            fArr2[i] = fArr[i];
         }
         return from(fArr2);
     }
@@ -163,7 +162,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Double> from(double... dArr) {
         Double[] dArr2 = new Double[dArr.length];
         for (int i = 0; i < dArr.length; i++) {
-            dArr2[i] = Double.valueOf(dArr[i]);
+            dArr2[i] = dArr[i];
         }
         return from(dArr2);
     }
@@ -171,7 +170,7 @@ public class Cube<E> implements Iterable<E> {
     public static Cube<Character> from(char... cArr) {
         Character[] chArr = new Character[cArr.length];
         for (int i = 0; i < cArr.length; i++) {
-            chArr[i] = Character.valueOf(cArr[i]);
+            chArr[i] = cArr[i];
         }
         return from(chArr);
     }

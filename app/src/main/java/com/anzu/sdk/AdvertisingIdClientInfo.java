@@ -84,7 +84,8 @@ public final class AdvertisingIdClientInfo {
                 binder.transact(1, obtain, obtain2, 0);
                 obtain2.readException();
                 return obtain2.readString();
-            } finally {
+            }
+            finally {
                 obtain2.recycle();
                 obtain.recycle();
             }
@@ -100,7 +101,8 @@ public final class AdvertisingIdClientInfo {
                 binder.transact(2, obtain, obtain2, 0);
                 obtain2.readException();
                 return obtain2.readInt() != 0;
-            } finally {
+            }
+            finally {
                 obtain2.recycle();
                 obtain.recycle();
             }
@@ -119,16 +121,20 @@ public final class AdvertisingIdClientInfo {
                     AdInfo adInfo = new AdInfo(advertisingInterface.getId(), advertisingInterface.isLimitAdTrackingEnabled(true));
                     context.unbindService(advertisingConnection);
                     return adInfo;
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     throw e;
-                } catch (Throwable th) {
+                }
+                catch (Throwable th) {
                     context.unbindService(advertisingConnection);
                     throw th;
                 }
-            } else {
+            }
+            else {
                 throw new IOException("Google Play connection failed");
             }
-        } else {
+        }
+        else {
             throw new IllegalStateException("Cannot be called from the main thread");
         }
     }

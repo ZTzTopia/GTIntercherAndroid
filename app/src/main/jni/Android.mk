@@ -6,7 +6,7 @@ LOCAL_MODULE := GrowtopiaFix
 LOCAL_ARM_MODE := arm
 
 LOCAL_CFLAGS := -fvisibility=hidden
-LOCAL_CPPFLAGS := -w -s -fvisibility=hidden -pthread -Wall -O3 -std=c++17
+LOCAL_CPPFLAGS := -w -s -fvisibility=hidden -pthread -Wall -O3 -std=c++11
 
 FILE_LIST := $(wildcard $(LOCAL_PATH)/src/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/game/*.c*)

@@ -55,7 +55,6 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
@@ -69,6 +68,7 @@ import com.android.vending.licensing.LicenseChecker;
 import com.android.vending.licensing.LicenseCheckerCallback;
 import com.android.vending.licensing.ServerManagedPolicy;
 import com.anzu.sdk.Anzu;
+import com.gt.launcher.FloatingService;
 import com.gt.launcher.R;
 import com.tapjoy.TJActionRequest;
 import com.tapjoy.TJConnectListener;
@@ -514,7 +514,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     }
 
     public static String get_externaldir() {
-        // Sirectory of external storage
+        // Directory of external storage
         boolean mExternalStorageAvailable = false;
         boolean mExternalStorageWriteable = false;
 
@@ -589,11 +589,8 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     @SuppressLint({"HardwareIds", "MissingPermission"})
     public static String get_macAddress() {
         WifiManager wimanager = (WifiManager) app.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        if (requestPermission("ACCESS_FINE_LOCATION")) {
-            String macAddress = wimanager.getConnectionInfo().getMacAddress();
-            return macAddress == null ? "" : macAddress;
-        }
-        return "";
+        String macAddress = wimanager.getConnectionInfo().getMacAddress();
+        return macAddress == null ? "" : macAddress;
     }
 
     public static String get_language() {
@@ -1086,6 +1083,14 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     public void toggle_keyboard(boolean show) {
         if (isInFloatingMode) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    // Fix for the other application keyboard not showing up in the floating mode.
+                    FloatingService.mFloatingService.updateWindowManagerParams(true, show, true);
+                }
+            });
+
             aww(show);
         }
 
@@ -1936,15 +1941,13 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     @SuppressLint("MissingPermission")
     public static synchronized void vibrate(int vibMS) {
-        if (requestPermission("VIBRATE")) {
-            Vibrator vibrator = ((Vibrator) app.getSystemService(Context.VIBRATOR_SERVICE));
-            if (vibrator != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(vibMS, VibrationEffect.DEFAULT_AMPLITUDE));
-                } else {
-                    // Deprecated in API 26
-                    vibrator.vibrate(vibMS);
-                }
+        Vibrator vibrator = ((Vibrator) app.getSystemService(Context.VIBRATOR_SERVICE));
+        if (vibrator != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(vibMS, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                // Deprecated in API 26
+                vibrator.vibrate(vibMS);
             }
         }
     }
@@ -2080,40 +2083,17 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         app.startActivity(intent);
     }
 
-    public static boolean requestPermission(String name) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            // Not necessary, asked on install already
-            return true;
-        }
-
-        if (name.equals("RECORD_AUDIO")) {
-            if (ContextCompat.checkSelfPermission(app, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                app.requestPermissions(new String[] { Manifest.permission.RECORD_AUDIO }, 1);
-                return false;
+    public String getExtractedLibraryPath() {
+        String extractedPath = getExternalFilesDir(null).getAbsolutePath() + "/extracted";
+        String libPath = extractedPath + "/lib";
+        String[] libAbi = { "armeabi-v7a", "arm64-v8a" };
+        for (String abi : libAbi) {
+            File libAbiPath = new File(libPath + "/" + abi);
+            if (libAbiPath.exists()) {
+                return libAbiPath.getAbsolutePath();
             }
         }
-
-        if (name.equals("CAMERA")) {
-            if (ContextCompat.checkSelfPermission(app, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                app.requestPermissions(new String[] { Manifest.permission.CAMERA }, 2);
-                return false;
-            }
-        }
-
-        if (name.equals("VIBRATE")) {
-            if (ContextCompat.checkSelfPermission(app, Manifest.permission.VIBRATE) != PackageManager.PERMISSION_GRANTED) {
-                app.requestPermissions(new String[] { Manifest.permission.VIBRATE }, 3);
-                return false;
-            }
-        }
-
-        if (name.equals("ACCESS_FINE_LOCATION")) {
-            if (ContextCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                app.requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION }, 4);
-                return false;
-            }
-        }
-        return true;
+        return "";
     }
 
     public GLSurfaceView mGLView;
