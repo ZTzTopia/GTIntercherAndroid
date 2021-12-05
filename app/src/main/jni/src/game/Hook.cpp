@@ -2,7 +2,7 @@
 #include <android/log.h>
 
 #include "../Main.h"
-#include "../include/KittyMemory/KittyMemory.h"
+#include "../include/KittyMemory/MemoryPatch.h"
 
 #define GTS(x) dlsym(g_growtopia_handle, x)
 
@@ -61,6 +61,9 @@ namespace game {
 #ifdef __arm__
             // GetBundleName()
             HOOK(GTS("_Z13GetBundleNamev"), (void *)GetBundleName_hook, NULL);
+#elif __aarch64__
+            MemoryPatch fixArm64 = MemoryPatch::createWithHex(reinterpret_cast<uintptr_t>(GTS("_Z13GetBundleNamev")), "000080D2C0035FD6");
+            fixArm64.Modify();
 #endif
 
             // LogMsg()

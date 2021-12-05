@@ -52,6 +52,10 @@ public class FloatingService extends Service {
         mFrameLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                if (!SharedActivity.app.isInFloatingMode) {
+                    return false;
+                }
+
                 SharedActivity.app.aww(false);
                 return true;
             }
@@ -140,8 +144,8 @@ public class FloatingService extends Service {
 
         // Set floating window params.
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                (int) (32 * 2.5f),
-                (int) (32 * 2.5f),
+                applyDimension,
+                applyDimension,
                 Build.VERSION.SDK_INT < Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_PHONE :
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
@@ -207,10 +211,15 @@ public class FloatingService extends Service {
         }
 
         if (isHideMode) {
+            int applyDimension = (int) TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    32,
+                    getResources().getDisplayMetrics());
+
             params.x = 16; // Reset Position of window
             params.y = 16; // Reset Position of window
-            params.width = (int) (32 * 2.5f);
-            params.height = (int) (32 * 2.5f);
+            params.width = applyDimension;
+            params.height = applyDimension;
         }
         else {
             // Calculate the size of floating window.
