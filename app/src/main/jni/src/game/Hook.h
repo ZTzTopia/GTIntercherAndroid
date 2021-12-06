@@ -1,7 +1,7 @@
 #pragma once
 
-namespace game {
-    namespace hook {
+namespace Game {
+    namespace Hook {
         void init();
     } // namespace hook
 } // namespace game

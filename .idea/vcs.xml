@@ -2,5 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/src/include/Android_Inline_Hook_ARM64" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/app/src/main/jni/src/include/Dobby" vcs="Git" />
   </component>
 </project>

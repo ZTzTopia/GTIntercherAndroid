@@ -7,8 +7,13 @@
 #include "game/Hook.h"
 
 void *g_growtopia_handle{ nullptr };
+ProcMap g_growtopia_map{};
 
 void *main_thread(void *) {
+    do {
+        g_growtopia_map = KittyMemory::getLibraryMap("libgrowtopia.so");
+    } while (!g_growtopia_map.isValid());
+
     do {
         // This is used for dladdr, dlclose, dlerror, dlopen, dlsym, dlvsym.
         // Just open the dynamic library don't load it.
@@ -16,7 +21,7 @@ void *main_thread(void *) {
         sleep(1);
     } while (g_growtopia_handle == nullptr);
 
-    game::hook::init();
+    Game::Hook::init();
 
     // Now we can exit the thread.
     pthread_exit(nullptr);

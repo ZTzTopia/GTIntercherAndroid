@@ -521,17 +521,22 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         String state = Environment.getExternalStorageState();
         if (state.equals(Environment.MEDIA_MOUNTED)) {
             mExternalStorageAvailable = mExternalStorageWriteable = true;
-        } else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
+        }
+        else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
             mExternalStorageAvailable = true;
             mExternalStorageWriteable = false;
-        } else {
+        }
+        else {
             // mExternalStorageAvailable = mExternalStorageWriteable = false;
         }
 
         if (!mExternalStorageWriteable) {
             return "";
         }
-        return Environment.getExternalStorageDirectory().toString();
+
+        // Alternatave GetBundlePrefix & GetBundleName.
+        return "";
+        // return Environment.getExternalStorageDirectory().toString();
     }
 
     // JNI used to get Save data dir
