@@ -403,11 +403,12 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         sendVersionDetails();
     }
 
-    public boolean isInFloatingMode = false;
+    public boolean inFloatingMode = false;
+    public boolean aleardyAtHome = false;
 
     protected synchronized void onPause() {
         Log.d(PackageName, "onPause...");
-        if (!isInFloatingMode) {
+        if (!inFloatingMode) {
             InputMethodManager inputMethodManager = (InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE);
             if (mGLView != null) {
                 inputMethodManager.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
@@ -424,18 +425,25 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         float hzTemp = accelHzSave;
         setup_accel(0.0f);
         accelHzSave = hzTemp;
-        if (!isInFloatingMode) {
+
+        if (!inFloatingMode) {
             mGLView.onPause();
         }
+
         super.onPause();
     }
 
     protected synchronized void onResume() {
         music_set_volume(m_lastMusicVol);
-        if (!isInFloatingMode) {
-            mGLView.onResume();
-        }
+        mGLView.onResume();
         setup_accel(accelHzSave);
+
+        if (inFloatingMode && aleardyAtHome) {
+            aleardyAtHome = false;
+            FloatingService.mFloatingService.showFloatingWindow(false);
+            inFloatingMode = false;
+        }
+
         super.onResume();
     }
 
@@ -1004,15 +1012,15 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     private void RegisterLayoutChangeCallback() {
         mViewGroup.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-            if (!isInFloatingMode) {
+            if (!inFloatingMode && !aleardyAtHome) {
                 Rect rect = new Rect();
                 getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
                 m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
                 if (m_KeyBoardHeight > 0 && !m_editText.isFocused()) {
-                    aww(true);
+                    showEditTextBox(true);
                 }
                 else if (m_KeyBoardHeight == 0 && m_editText.isFocused()) {
-                    aww(false);
+                    showEditTextBox(false);
                 }
             }
         });
@@ -1059,42 +1067,37 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         }
     }
 
-    public void aww(boolean show) {
-        runOnUiThread(() -> {
-            if (show && !m_editText.isFocused()) {
-                Log.d("NIRMAN", "KeyboardX opening...");
-                UpdateEditBoxInView(true, false);
-            }
-            else if (!show && m_editText.isFocused()) {
-                Log.d("NIRMAN", "KeyboardX closing...");
-                if (!passwordField && !m_canShowCustomKeyboard) {
-                    nativeOnKey(1, VIRTUAL_KEY_BACK, 0);
+    public void showEditTextBox(boolean show) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (show && !m_editText.isFocused()) {
+                    Log.d("NIRMAN", "KeyboardX opening...");
+                    UpdateEditBoxInView(true, false);
+                }
+                else if (!show && m_editText.isFocused()) {
+                    Log.d("NIRMAN", "KeyboardX closing...");
+                    if (!passwordField && !m_canShowCustomKeyboard) {
+                        nativeOnKey(1, VIRTUAL_KEY_BACK, 0);
+                    }
+
+                    nativeCancelBtnPressed();
+                    UpdateEditBoxInView(false, false);
+                    if (Looper.myLooper() != Looper.getMainLooper()) {
+                        nativeUpdateConsoleLogPos((float) m_KeyBoardHeight);
+                    }
                 }
 
-                nativeCancelBtnPressed();
-                UpdateEditBoxInView(false, false);
-                if (Looper.myLooper() != Looper.getMainLooper()) {
-                    nativeUpdateConsoleLogPos((float) m_KeyBoardHeight);
+                if (m_editText.isFocused()) {
+                    UpdateEditBoxRootViewPosition();
                 }
-            }
-
-            if (m_editText.isFocused()) {
-                UpdateEditBoxRootViewPosition();
             }
         });
     }
 
     public void toggle_keyboard(boolean show) {
-        if (isInFloatingMode) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    // Fix for the other application keyboard not showing up in the floating mode.
-                    FloatingService.mFloatingService.updateWindowManagerParams(true, show, true);
-                }
-            });
-
-            aww(show);
+        if (inFloatingMode && aleardyAtHome) {
+            showEditTextBox(show);
         }
 
         InputMethodManager inputMethodManager = (InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE);

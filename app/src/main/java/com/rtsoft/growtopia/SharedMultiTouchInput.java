@@ -74,7 +74,7 @@ public class SharedMultiTouchInput {
             RemoveFinger(id);
         }
 
-        if (app.isInFloatingMode) {
+        if (app.inFloatingMode) {
             x *= 2.5f;
             y *= 2.25f;
         }

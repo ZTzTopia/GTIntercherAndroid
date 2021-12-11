@@ -112,7 +112,7 @@ public class Launch extends SharedActivity {
                 fileOutputStream.flush();
                 fileOutputStream.close();
                 open.close();
-                System.out.println("Writing " + bytesRead + " bytes");
+                Log.d(TAG, "Writing " + bytesRead + " bytes");
                 return;
             }
 
