@@ -81,7 +81,7 @@ public class FloatingService extends Service {
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showFloatingWindow(mFloatingWindow.getVisibility() == View.VISIBLE);
+                showFloatingWindow(mFloatingWindow.getVisibility() != View.VISIBLE);
             }
         });
 
@@ -144,21 +144,6 @@ public class FloatingService extends Service {
 
     public void showFloatingWindow(boolean show) {
         if (show) {
-            // Hide the floating window.
-            updateWindowManagerParams(true, false, false);
-            mFloatingWindow.setVisibility(View.GONE);
-
-            // Content stuff.
-            mFloatingWindowContent.removeView(SharedActivity.app.mGLView);
-            mFloatingWindowContent.removeView(SharedActivity.m_editTextRoot);
-            SharedActivity.app.mViewGroup.addView(SharedActivity.app.mGLView);
-            SharedActivity.app.mViewGroup.addView(SharedActivity.m_editTextRoot);
-
-            if (!SharedActivity.app.aleardyAtHome) {
-                SharedActivity.app.inFloatingMode = false;
-            }
-        }
-        else {
             // Show the floating window.
             updateWindowManagerParams(false, false, false);
             mFloatingWindow.setVisibility(View.VISIBLE);
@@ -169,6 +154,8 @@ public class FloatingService extends Service {
             mFloatingWindowContent.addView(SharedActivity.app.mGLView);
             mFloatingWindowContent.addView(SharedActivity.m_editTextRoot);
 
+            SharedActivity.app.inFloatingMode = true;
+
             if (!SharedActivity.app.aleardyAtHome) {
                 Intent intent = new Intent(Intent.ACTION_MAIN);
                 intent.addCategory(Intent.CATEGORY_HOME);
@@ -177,8 +164,19 @@ public class FloatingService extends Service {
 
                 SharedActivity.app.aleardyAtHome = true;
             }
+        }
+        else {
+            // Hide the floating window.
+            updateWindowManagerParams(true, false, false);
+            mFloatingWindow.setVisibility(View.GONE);
 
-            SharedActivity.app.inFloatingMode = true;
+            // Content stuff.
+            mFloatingWindowContent.removeView(SharedActivity.app.mGLView);
+            mFloatingWindowContent.removeView(SharedActivity.m_editTextRoot);
+            SharedActivity.app.mViewGroup.addView(SharedActivity.app.mGLView);
+            SharedActivity.app.mViewGroup.addView(SharedActivity.m_editTextRoot);
+
+            SharedActivity.app.inFloatingMode = false;
         }
 
         // Reload the surface.

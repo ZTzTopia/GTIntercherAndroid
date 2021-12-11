@@ -435,16 +435,19 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     protected synchronized void onResume() {
         music_set_volume(m_lastMusicVol);
-        mGLView.onResume();
-        setup_accel(accelHzSave);
 
-        if (inFloatingMode && aleardyAtHome) {
-            aleardyAtHome = false;
-            FloatingService.mFloatingService.showFloatingWindow(false);
-            inFloatingMode = false;
+        if (!inFloatingMode) {
+            mGLView.onResume();
         }
 
+        setup_accel(accelHzSave);
+
         super.onResume();
+
+        if (inFloatingMode && aleardyAtHome) {
+            SharedActivity.app.aleardyAtHome = false;
+            FloatingService.mFloatingService.showFloatingWindow(false);
+        }
     }
 
     public final Runnable mUpdateMainThread = () -> {
