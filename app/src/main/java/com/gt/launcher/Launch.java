@@ -42,7 +42,7 @@ public class Launch extends SharedActivity {
                 File libraryFile = new File(libraryPath + "/libgrowtopia.so");
                 if (!libraryFile.exists()) {
                     libraryPath = getExtractedLibraryPath();
-                    libraryFile = new File(libraryPath);
+                    libraryFile = new File(libraryPath + "/libgrowtopia.so");
                 }
 
                 if (libraryFile.exists()) {
