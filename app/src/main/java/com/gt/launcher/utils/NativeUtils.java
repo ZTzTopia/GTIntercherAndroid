@@ -1,4 +1,4 @@
-package com.gt.launcher;
+package com.gt.launcher.utils;
 
 import android.os.Build;
 import android.util.Log;

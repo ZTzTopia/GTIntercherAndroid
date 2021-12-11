@@ -2,6 +2,7 @@ package com.gt.launcher;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -9,9 +10,11 @@ import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
+import com.gt.launcher.utils.NativeUtils;
 import com.rtsoft.growtopia.SharedActivity;
 
 import java.io.File;
@@ -34,20 +37,39 @@ public class Launch extends SharedActivity {
         PackageName = "com.rtsoft.growtopia";
         if (!new File(Environment.getExternalStorageDirectory().toString() + File.separatorChar + "windows" + File.separatorChar + "BstSharedFolder").exists()) {
             try {
-                copyLibraryToDex(getExtractedLibraryPath() + "/libgrowtopia.so", "libgrowtopia.so");
-                copyLibraryToDex(getExtractedLibraryPath() + "/libanzu.so", "libanzu.so");
+                ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo("com.rtsoft.growtopia", 0);
+                String libraryPath = applicationInfo.nativeLibraryDir;
+                File libraryFile = new File(libraryPath + "/libgrowtopia.so");
+                if (libraryFile.exists()) {
+                    copyLibraryToDex(libraryPath + "/libgrowtopia.so", "libgrowtopia.so");
+                    copyLibraryToDex(libraryPath + "/libanzu.so", "libanzu.so");
+                }
+                else {
+                    copyLibraryToDex(getExtractedLibraryPath() + "/libgrowtopia.so", "libgrowtopia.so");
+                    copyLibraryToDex(getExtractedLibraryPath() + "/libanzu.so", "libanzu.so");
+                }
+
                 NativeUtils.installNativeLibraryPath(getClassLoader(),
                         new File(getDir("dex", 0).getAbsolutePath()), false);
             }
             catch (Exception e) {
+                Toast.makeText(this, "Failed to install native libraries", Toast.LENGTH_LONG).show();
                 e.printStackTrace();
             }
             catch (Throwable throwable) {
+                Toast.makeText(this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                 throwable.printStackTrace();
             }
 
-            System.loadLibrary("anzu");
-            System.loadLibrary(dllname);
+            try {
+                System.loadLibrary("anzu");
+                System.loadLibrary(dllname);
+            }
+            catch (UnsatisfiedLinkError e) {
+                Toast.makeText(this, "Failed to load native library", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+
             super.onCreate(savedInstanceState);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
@@ -71,6 +93,12 @@ public class Launch extends SharedActivity {
                 }, 700);
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopService(new Intent(this, FloatingService.class));
     }
 
     public void copyLibraryToDex(String pathWithFileName, String fileName) throws Exception {

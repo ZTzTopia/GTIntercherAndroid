@@ -1,4 +1,4 @@
-package com.gt.launcher;
+package com.gt.launcher.utils;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;

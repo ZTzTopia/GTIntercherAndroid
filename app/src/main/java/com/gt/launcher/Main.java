@@ -1,6 +1,7 @@
 package com.gt.launcher;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -8,7 +9,9 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
@@ -19,13 +22,42 @@ import net.lingala.zip4j.exception.ZipException;
 import java.io.File;
 
 public class Main extends Activity {
+    private static final String TAG = "GTLauncherAndroid";
+
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Context context = this;
 
-        // We can load other library here.
-        System.loadLibrary("GrowtopiaFix");
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
+                AlertDialog alertDialog = new AlertDialog.Builder(context).create();
+                alertDialog.setTitle("uncaughtException");
+                alertDialog.setMessage(e.getMessage());
+                alertDialog.setIcon(android.R.drawable.ic_dialog_alert);
+                alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Close", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                        System.exit(1);
+                    }
+                });
+                alertDialog.setCanceledOnTouchOutside(false);
+                alertDialog.setCancelable(false);
+                alertDialog.show();
+            }
+        });
+
+        try {
+            // We can load other library here.
+            System.loadLibrary("GrowtopiaFix");
+        }
+        catch (UnsatisfiedLinkError e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Failed to load native library", Toast.LENGTH_LONG).show();
+        }
 
         try {
             // Check if the app is installed.
@@ -45,6 +77,7 @@ public class Main extends Activity {
                             zipFile.extractAll(getExternalFilesDir(null).getAbsolutePath() + "/extracted/");
                         }
                         catch (ZipException e) {
+                            Toast.makeText(this, "Error extracting library file.", Toast.LENGTH_SHORT).show();
                             e.printStackTrace();
                             finish();
                             System.exit(1);
@@ -59,13 +92,12 @@ public class Main extends Activity {
         }
         catch (PackageManager.NameNotFoundException e) {
             // The app is not installed.
-            Log.e("GTLauncherAndroid", "Growtopia application not found.");
+            Log.e(TAG, "Growtopia application not found.");
             e.printStackTrace();
             runOnUiThread(new Runnable() {
-                @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                 @Override
                 public void run() {
-                    AlertDialog alertDialog = new AlertDialog.Builder(Main.this).create();
+                    AlertDialog alertDialog = new AlertDialog.Builder(context).create();
                     alertDialog.setTitle("Growtopia application not found");
                     alertDialog.setMessage("This launcher need original Growtopia application from playstore to run, please donwload it from playstore and re-open the launcher.");
                     alertDialog.setIcon(android.R.drawable.ic_dialog_alert);
