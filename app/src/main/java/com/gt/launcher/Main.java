@@ -33,20 +33,27 @@ public class Main extends Activity {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
-                AlertDialog alertDialog = new AlertDialog.Builder(context).create();
-                alertDialog.setTitle("uncaughtException");
-                alertDialog.setMessage(e.getMessage());
-                alertDialog.setIcon(android.R.drawable.ic_dialog_alert);
-                alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Close", new DialogInterface.OnClickListener() {
+                e.printStackTrace();
+
+                runOnUiThread(new Runnable() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish();
-                        System.exit(1);
+                    public void run() {
+                        AlertDialog alertDialog = new AlertDialog.Builder(context).create();
+                        alertDialog.setTitle("uncaughtException");
+                        alertDialog.setMessage(e.getMessage());
+                        alertDialog.setIcon(android.R.drawable.ic_dialog_alert);
+                        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Close", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                finish();
+                                System.exit(1);
+                            }
+                        });
+                        alertDialog.setCanceledOnTouchOutside(false);
+                        alertDialog.setCancelable(false);
+                        alertDialog.show();
                     }
                 });
-                alertDialog.setCanceledOnTouchOutside(false);
-                alertDialog.setCancelable(false);
-                alertDialog.show();
             }
         });
 
@@ -77,12 +84,14 @@ public class Main extends Activity {
                             zipFile.extractAll(getExternalFilesDir(null).getAbsolutePath() + "/extracted/");
                         }
                         catch (ZipException e) {
-                            Toast.makeText(this, "Error extracting library file.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Error extracting library file", Toast.LENGTH_SHORT).show();
                             e.printStackTrace();
+
                             finish();
                             System.exit(1);
-                            return;
                         }
+
+                        break;
                     }
                 }
             }
@@ -92,8 +101,8 @@ public class Main extends Activity {
         }
         catch (PackageManager.NameNotFoundException e) {
             // The app is not installed.
-            Log.e(TAG, "Growtopia application not found.");
             e.printStackTrace();
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

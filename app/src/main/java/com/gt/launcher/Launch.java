@@ -40,25 +40,32 @@ public class Launch extends SharedActivity {
                 ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo("com.rtsoft.growtopia", 0);
                 String libraryPath = applicationInfo.nativeLibraryDir;
                 File libraryFile = new File(libraryPath + "/libgrowtopia.so");
+                if (!libraryFile.exists()) {
+                    libraryPath = getExtractedLibraryPath();
+                    libraryFile = new File(libraryPath);
+                }
+
                 if (libraryFile.exists()) {
                     copyLibraryToDex(libraryPath + "/libgrowtopia.so", "libgrowtopia.so");
                     copyLibraryToDex(libraryPath + "/libanzu.so", "libanzu.so");
                 }
                 else {
-                    copyLibraryToDex(getExtractedLibraryPath() + "/libgrowtopia.so", "libgrowtopia.so");
-                    copyLibraryToDex(getExtractedLibraryPath() + "/libanzu.so", "libanzu.so");
+                    makeToastUI("Failed to find library file");
+                    exit();
                 }
 
                 NativeUtils.installNativeLibraryPath(getClassLoader(),
                         new File(getDir("dex", 0).getAbsolutePath()), false);
             }
             catch (Exception e) {
-                Toast.makeText(this, "Failed to install native libraries", Toast.LENGTH_LONG).show();
+                makeToastUI("Failed to install native libraries");
                 e.printStackTrace();
+                exit();
             }
             catch (Throwable throwable) {
-                Toast.makeText(this, "Error: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                makeToastUI("Error: " + throwable.getMessage());
                 throwable.printStackTrace();
+                exit();
             }
 
             try {
@@ -66,8 +73,9 @@ public class Launch extends SharedActivity {
                 System.loadLibrary(dllname);
             }
             catch (UnsatisfiedLinkError e) {
-                Toast.makeText(this, "Failed to load native library", Toast.LENGTH_LONG).show();
+                makeToastUI("Failed to load native library");
                 e.printStackTrace();
+                exit();
             }
 
             super.onCreate(savedInstanceState);
@@ -79,8 +87,7 @@ public class Launch extends SharedActivity {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        finish();
-                        System.exit(1);
+                        exit();
                     }
                 }, 5000);
             }
@@ -99,6 +106,11 @@ public class Launch extends SharedActivity {
     protected void onDestroy() {
         super.onDestroy();
         stopService(new Intent(this, FloatingService.class));
+    }
+
+    private void exit() {
+        finish();
+        System.exit(1);
     }
 
     public void copyLibraryToDex(String pathWithFileName, String fileName) throws Exception {

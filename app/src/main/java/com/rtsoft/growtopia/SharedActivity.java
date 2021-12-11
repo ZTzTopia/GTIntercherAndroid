@@ -436,7 +436,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     protected synchronized void onResume() {
         music_set_volume(m_lastMusicVol);
 
-        if (!inFloatingMode) {
+        if (!inFloatingMode && !aleardyAtHome) {
             mGLView.onResume();
         }
 
@@ -447,6 +447,10 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         if (inFloatingMode && aleardyAtHome) {
             SharedActivity.app.aleardyAtHome = false;
             FloatingService.mFloatingService.showFloatingWindow(false);
+        }
+
+        if (!inFloatingMode && aleardyAtHome) {
+            SharedActivity.app.aleardyAtHome = false;
         }
     }
 

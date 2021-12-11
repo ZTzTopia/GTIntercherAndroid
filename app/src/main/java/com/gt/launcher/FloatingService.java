@@ -186,7 +186,7 @@ public class FloatingService extends Service {
             public void run() {
                 SharedActivity.app.mGLView.onResume();
             }
-        }, 800);
+        }, 1000);
     }
 
     public void updateWindowManagerParams(boolean show, boolean canShowKeyboard, boolean z) {
