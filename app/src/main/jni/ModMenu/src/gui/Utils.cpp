@@ -33,7 +33,7 @@ namespace gui {
         void category(const char *label) {
             ImGui::Dummy(ImVec2(0.0f, g_gui->m_scale.y * 8.0f));
             ImGui::PushFont(g_gui->m_bold_font);
-            ImGui::TextColored(ImColor(123, 129, 138, 255), "All");
+            ImGui::TextColored(ImColor(123, 129, 138, 255), label);
             ImGui::PopFont();
         }
 
