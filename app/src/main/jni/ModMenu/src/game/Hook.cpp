@@ -12,7 +12,7 @@
 
 gui::Gui *g_gui{ nullptr };
 game::Game *g_game{ nullptr };
-enet_uint16 g_port{ 17091 };
+enet_uint16 g_port{ 65535 };
 
 void (*BaseApp_Draw)(void *thiz);
 void BaseApp_Draw_hook(void *thiz) {
@@ -142,7 +142,6 @@ void ENetClient_Init_hook(uintptr_t thiz, std::string a1, enet_uint16 port, std:
 void (*App_Update)(void* thiz);
 void App_Update_hook(void* thiz) {
     App_Update(thiz);
-    // GetComponentManager()->Update();
 }
 
 void (*enet_peer_sends)(ENetPeer* peer, enet_uint8 a2, ENetPacket* packet);
@@ -196,23 +195,23 @@ namespace game {
             // AppOnTouch()
             DobbyHook(GTS("_Z10AppOnTouchP7_JNIEnvP8_jobjectiffi"), (void *)AppOnTouch_hook, (void **)&AppOnTouch);
 
-            // AppOnKey
+            // AppOnKey()
             DobbyHook(GTS("_Z8AppOnKeyP7_JNIEnvP8_jobjectiii"), (void *)AppOnKey_hook, (void **)&AppOnKey);
 
             // NetHTTP::Update()
             // DobbyHook(GTS("_ZN7NetHTTP6UpdateEv"), (void *)NetHTTP_Update_hook, (void **)&NetHTTP_Update);
 
             // ENetClient::Init()
-            DobbyHook(GTS("_ZN10ENetClient4InitESsiSs"), (void *)ENetClient_Init_hook, (void **)&ENetClient_Init);
+            // DobbyHook(GTS("_ZN10ENetClient4InitESsiSs"), (void *)ENetClient_Init_hook, (void **)&ENetClient_Init);
 
             // App::Update()
-            DobbyHook(GTS("_ZN3App6UpdateEv"), (void *)App_Update_hook, (void **)&App_Update);
+            // DobbyHook(GTS("_ZN3App6UpdateEv"), (void *)App_Update_hook, (void **)&App_Update);
 
             // enet_peer_send()
             // DobbyHook(GTS("enet_peer_send"), (void *)enet_peer_send_hook, (void **)&enet_peer_sends);
 
             // GameLogicComponent::SendPing()
-            DobbyHook(GTS("_ZN18GameLogicComponent8SendPingEv"), (void *)GameLogicComponent_SendPing_hook, (void **)&GameLogicComponent_SendPing);
+            // DobbyHook(GTS("_ZN18GameLogicComponent8SendPingEv"), (void *)GameLogicComponent_SendPing_hook, (void **)&GameLogicComponent_SendPing);
         }
     } // namespace hook
 } // namespace game
