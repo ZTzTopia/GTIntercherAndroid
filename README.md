@@ -1,5 +1,5 @@
-# GTLauncherAndroid
-GTLauncherAndroid is a growtopia launcher LiKE nO oThER. Without having to update the launcher if the game is updated.
+# GTIntercherAndroid
+GTIntercherAndroid is GTInternalAndroid + GTLauncherAndroid.
 
 ![](https://cdn.discordapp.com/attachments/488978346072604682/916262099997581342/unknown.png)
 ![](https://cdn.discordapp.com/attachments/488978346072604682/916261969798004736/unknown.png)
@@ -9,7 +9,7 @@ GTLauncherAndroid is a growtopia launcher LiKE nO oThER. Without having to updat
 - Floating Windows.
 
 ## 😋 Coming Soon
-- None
+- Lua executor [Lua Documentations](https://github.com/ZTzTopia/GTIntercherAndroid/blob/master/LUADOCS.md)
 
 ## 💻 Requirements
 The following dependencies are required to build the library from source.
