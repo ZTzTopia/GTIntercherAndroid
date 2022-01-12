@@ -10,6 +10,7 @@ namespace gui {
         bool input_text(const char *label, const char *label_id, char *buf, size_t buf_size,
                         ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = __null,
                         void *user_data = __null);
+        bool check_box(const char* label, bool* v);
     } // namespace menu
 
     namespace utils {

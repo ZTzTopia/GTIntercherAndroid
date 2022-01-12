@@ -90,7 +90,7 @@ namespace gui {
             // Checkbox
             MemoryPatch memory_patch{};
             for (auto& cheatList : g_game->m_cheat_list) {
-                if (ImGui::Checkbox(cheatList.name.c_str(), &cheatList.state)) {
+                if (utils::check_box(cheatList.name.c_str(), &cheatList.state)) {
                     if (cheatList.active != nullptr) {
                         cheatList.active();
                     }

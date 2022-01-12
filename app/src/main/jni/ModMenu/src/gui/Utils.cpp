@@ -93,5 +93,14 @@ namespace gui {
             ImGui::PopStyleVar();
             return ret;
         }
+
+        bool check_box(const char* label, bool* v) {
+            bool ret{ false };
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, g_gui->m_scale.y * 4.0f));
+            ret = ImGui::Checkbox(label, v);
+            ImGui::PopStyleVar();
+            return ret;
+        }
     } // namespace menu
 } // namespace gui
