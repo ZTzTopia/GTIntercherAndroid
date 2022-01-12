@@ -1,5 +1,5 @@
 # GTIntercherAndroid
-GTIntercherAndroid is GTInternalAndroid + GTLauncherAndroid.
+GTIntercherAndroid is GTInternalAndroid + GTLauncherAndroid. (After GTIntercherAndroid update i will update GTInternalAndroid and GTLauncherAndroid, if i'm not lazy :D.)
 
 ![](https://cdn.discordapp.com/attachments/488978346072604682/930804704143884339/unknown.png)
 ![](https://cdn.discordapp.com/attachments/488978346072604682/930804751434670100/unknown.png)
@@ -25,4 +25,4 @@ Android is very slow when deleting and moving files it's very frustrating for me
 2. Install the application.
 3. Profit.
 
-**If you can't make it you can download the finished application on the release page.**
+**If you can't make it, you can download the finished application on the release page.**
