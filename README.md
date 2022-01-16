@@ -24,11 +24,6 @@ The following dependencies are required to build the library from source.
   - [Android NDK](https://github.com/Lzhiyong/termux-ndk/releases/tag/android-ndk)
 
 ## 🔨 Building
-- Windows
-  1. Build the source code.
-  2. Install the application.
-  3. Profit.
-
 - Android
 
   Download the [Android SDK](https://github.com/Lzhiyong/termux-ndk/releases/tag/android-sdk) and [Android NDK](https://github.com/Lzhiyong/termux-ndk/releases/tag/android-ndk).
