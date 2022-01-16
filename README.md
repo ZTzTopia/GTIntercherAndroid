@@ -19,7 +19,7 @@ The following dependencies are required to build the library from source.
   - [Android Studio](https://developer.android.com/studio).
 
 - Android
-  - Termux
+  - [Termux](https://github.com/termux/termux-app/releases)
   - [Android SDK](https://github.com/Lzhiyong/termux-ndk/releases/tag/android-sdk)
   - [Android NDK](https://github.com/Lzhiyong/termux-ndk/releases/tag/android-ndk)
 
