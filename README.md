@@ -19,7 +19,7 @@ The following dependencies are required to build the library from source.
   - [Android Studio](https://developer.android.com/studio).
 
 - Android
-  - Termux
+  - [Termux](https://github.com/termux/termux-app/releases)
   - [Android SDK](https://github.com/Lzhiyong/termux-ndk/releases/tag/android-sdk)
   - [Android NDK](https://github.com/Lzhiyong/termux-ndk/releases/tag/android-ndk)
 
@@ -44,7 +44,7 @@ The following dependencies are required to build the library from source.
   ndk.dir=/path/to/android-ndk
   # for example:
   sdk.dir=/data/data/com.termux/files/home/android-sdk
-  ndk.dir=/data/data/com.termux/files/home/android-ndk-r23bcmake
+  ndk.dir=/data/data/com.termux/files/home/android-ndk-r23b
   ```
 
   Execute the `gradle build` command to start building the android app, when building for the first time, the below error will occur.
