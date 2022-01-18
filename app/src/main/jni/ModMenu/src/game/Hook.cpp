@@ -72,8 +72,7 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
     }
 
     // We need to wait until next two frame to handle key event.
-    // So the text not blinks, but if we fast typing, it will blinks because
-    // we don't handle it after keyboard is opened..
+    // So the text not blinks.
     if (g_gui->m_wait_until_next_frame < 2) {
         return;
     }
@@ -91,7 +90,7 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
             break;
     }
 
-    LOGD("Keycode: %d, Char: %d", keycode, c);
+    // LOGD("Keycode: %d, Char: %d", keycode, c);
 
     ImGuiInputTextState *state = ImGui::GetInputTextState(g.ActiveId);
     if (type == 1) {
@@ -100,13 +99,11 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
             case 9: // Tab
                 break;
             case 8: { // Backspace
-                // Is we press backspace? we need to delete the last char.
-                // default case not handle last char.
                 if (state) {
                     state->ClearText();
                 }
 
-                // Fix blink?
+                // Fix blink? Yes.
                 io.InputQueueCharacters.clear();
                 break;
             }
@@ -115,10 +112,6 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
                 ImGui::ClearActiveID();
                 break;
             default: {
-                if (state) {
-                    state->ClearText();
-                }
-
                 io.AddInputCharacter(c);
                 break;
             }
