@@ -91,7 +91,7 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
             break;
     }
 
-    // LOGD("Keycode: %d, Char: %d", keycode, c);
+    LOGD("Keycode: %d, Char: %d", keycode, c);
 
     ImGuiInputTextState *state = ImGui::GetInputTextState(g.ActiveId);
     if (type == 1) {
@@ -102,9 +102,12 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
             case 8: { // Backspace
                 // Is we press backspace? we need to delete the last char.
                 // default case not handle last char.
-                if (state && state->TextA[1] == '\0') {
+                if (state) {
                     state->ClearText();
                 }
+
+                // Fix blink?
+                io.InputQueueCharacters.clear();
                 break;
             }
             case 13: // Enter
@@ -116,7 +119,7 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
                     state->ClearText();
                 }
 
-                io.AddInputCharacter(static_cast<unsigned int>(c));
+                io.AddInputCharacter(c);
                 break;
             }
         }

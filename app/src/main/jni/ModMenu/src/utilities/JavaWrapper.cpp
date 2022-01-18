@@ -22,7 +22,7 @@ namespace utilities {
             return static_cast<int>(num_bytes);
         }
 
-        void show_soft_keyboard_input(bool show, const char *default_text, bool password) {
+        void show_soft_keyboard_input(bool show, const char *default_text, bool password, int max_length) {
             JNIEnv *env{};
             g_java_vm->GetEnv((void**)&env, JNI_VERSION_1_6);
             jclass java_class = env->FindClass("com/gt/launcher/Launch");
@@ -36,7 +36,7 @@ namespace utilities {
                 }
                 else {
                     jstring java_string = env->NewStringUTF(default_text);
-                    env->CallStaticBooleanMethod(java_class, java_method_id, show, 128, java_string, password);
+                    env->CallStaticBooleanMethod(java_class, java_method_id, show, max_length, java_string, password);
                 }
             }
         }

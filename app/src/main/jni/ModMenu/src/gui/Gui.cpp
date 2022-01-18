@@ -186,7 +186,7 @@ namespace gui {
             ImGuiInputTextState *state = ImGui::GetInputTextState(g.ActiveId);
             if (state) {
                 const bool is_password = (state->InitFlags & ImGuiInputTextFlags_Password) != 0;
-                utilities::java_wrapper::show_soft_keyboard_input(true, state->InitialTextA.Data, is_password);
+                utilities::java_wrapper::show_soft_keyboard_input(true, state->InitialTextA.Data, is_password, state->BufCapacityA - 1);
 
                 bool found{ false };
                 for (auto &GetInputState : last_GetInputState) {
