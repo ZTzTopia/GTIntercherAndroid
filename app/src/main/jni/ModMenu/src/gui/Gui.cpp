@@ -5,8 +5,8 @@
 #include "include/ini.h"
 #include "utilities/JavaWrapper.h"
 #include "utilities/Macros.h"
-#include "IconsFontAwesome5.h"
-#include "FontsData.h"
+#include "font/IconsFontAwesome5.h"
+#include "font/FontsData.h"
 
 #define MULT_X	0.00052083333f	// 1/1920
 #define MULT_Y	0.00092592592f 	// 1/1080
@@ -65,7 +65,7 @@ namespace gui {
         // Load small font.
         m_small_font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(arialce_compressed_data_base85, 24.0f);
         // Load font awesome. (Merge to above font)
-        io.Fonts->AddFontFromMemoryCompressedBase85TTF(fasolid_compressed_data_base85, 24.0f, &icons_config, icons_ranges);
+        io.Fonts->AddFontFromMemoryCompressedBase85TTF(fasolid_compressed_data_base85, 18.0f, &icons_config, icons_ranges);
 
         // Load bold font.
         m_bold_font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(arialce_bold_compressed_data_base85, 30.0f);

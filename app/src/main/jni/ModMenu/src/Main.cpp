@@ -23,7 +23,6 @@
 #include "game/Hook.h"
 #include "utilities/CrashDump.h"
 #include "utilities/JavaWrapper.h"
-#include "include/sol2/sol.hpp"
 
 JavaVM *g_java_vm{ nullptr };
 void *g_growtopia_handle{ nullptr };

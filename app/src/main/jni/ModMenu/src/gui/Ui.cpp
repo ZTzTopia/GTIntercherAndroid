@@ -5,7 +5,7 @@
 #include "game/Game.h"
 #include "game/Hook.h"
 #include "include/KittyMemory/MemoryPatch.h"
-#include "IconsFontAwesome5.h"
+#include "font/IconsFontAwesome5.h"
 
 namespace gui {
     namespace ui {

@@ -64,14 +64,13 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/vendor/imgui
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/vendor/enet/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/vendor/lua
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/vendor/sol2/include
 
 FILE_LIST := $(wildcard $(LOCAL_PATH)/src/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/client/*.c*)
-# FILE_LIST += $(wildcard $(LOCAL_PATH)/src/component/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/game/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/gui/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/include/KittyMemory/*.c*)
-# FILE_LIST += $(wildcard $(LOCAL_PATH)/src/net/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/packet/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/proton/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/proton/shared/manager/*.c*)

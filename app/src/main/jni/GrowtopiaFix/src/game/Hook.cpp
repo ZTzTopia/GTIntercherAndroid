@@ -1,13 +1,10 @@
 #include <dlfcn.h>
 #include <android/log.h>
 
-#include "../Main.h"
-#include "../include/Dobby/dobby.h"
+#include "Main.h"
+#include "include/Dobby/dobby.h"
 
 #define GTS(x) dlsym(g_growtopia_handle, x)
-
-static float g_width{ 0.0f };
-static float g_height{ 0.0f };
 
 // Fix for printing blank message in the console.
 void (*LogMsg)(const char *, ...);

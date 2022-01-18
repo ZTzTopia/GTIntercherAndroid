@@ -3,6 +3,13 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTIntercherAndroid/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.248" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTIntercherAndroid/app/src/main/res/drawable/ic_baseline_arrow_back_24.xml" value="0.248" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTIntercherAndroid/app/src/main/res/drawable/ic_baseline_close_24.xml" value="0.248" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTIntercherAndroid/app/src/main/res/drawable/ic_launcher_background.xml" value="0.248" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTIntercherAndroid/app/src/main/res/drawable/round_border_black.xml" value="0.248" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTIntercherAndroid/app/src/main/res/drawable/round_border_purple.xml" value="0.248" />
+        <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTIntercherAndroid/app/src/main/res/drawable/round_border_transparent.xml" value="0.248" />
         <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/drawable/ic_baseline_arrow_back_24.xml" value="0.236" />
         <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/drawable/ic_baseline_arrow_back_24_rounded.xml" value="0.236" />
         <entry key="..\:/Users/Kiky/AndroidStudioProjects/GTLauncher/app/src/main/res/drawable/ic_baseline_close_24.xml" value="0.236" />
