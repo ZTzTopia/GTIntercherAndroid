@@ -1,6 +1,5 @@
 package com.gt.launcher;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.net.Uri;
@@ -10,7 +9,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -24,7 +22,6 @@ import java.io.FileOutputStream;
 public class Launch extends SharedActivity {
     private static final String TAG = "GTLauncherAndroid";
 
-    @SuppressLint("UnsafeDynamicallyLoadedCode")
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         Log.d("GTLauncherAndroid", "Launching growtopia..");

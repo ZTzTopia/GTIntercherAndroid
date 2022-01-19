@@ -6,9 +6,6 @@
 
 #define GTS(x) dlsym(g_growtopia_handle, x)
 
-static float g_width{ 0.0f };
-static float g_height{ 0.0f };
-
 // Fix for printing blank message in the console.
 void (*LogMsg)(const char *, ...);
 void LogMsg_hook(const char *msg, ...) {
@@ -32,8 +29,8 @@ void LogMsg_hook(const char *msg, ...) {
                         KittyMemory::callFunction<const char *>(GTS("_Z10GetAppNamev")), buffer);
 }
 
-namespace Game {
-    namespace Hook {
+namespace game {
+    namespace hook {
         void init() {
             // set Dobby logging level.
             log_set_level(0);

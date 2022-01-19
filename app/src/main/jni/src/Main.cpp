@@ -21,7 +21,7 @@ void *main_thread(void *) {
         sleep(1);
     } while (g_growtopia_handle == nullptr);
 
-    Game::Hook::init();
+    game::hook::init();
 
     // Now we can exit the thread.
     pthread_exit(nullptr);
