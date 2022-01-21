@@ -62,7 +62,6 @@ public class Main extends Activity {
             // We can load other library here.
             System.loadLibrary("GrowtopiaFix");
             System.loadLibrary("ModMenu");
-            nativeLoadFontForImGui(getAssets());
         }
         catch (UnsatisfiedLinkError e) {
             e.printStackTrace();
@@ -70,9 +69,6 @@ public class Main extends Activity {
         }
 
         try {
-            // Check if the app is installed.
-            getPackageManager().getPackageInfo("com.rtsoft.growtopia", 0);
-
             // Extract the library .apk file, i tested on my android 11 device the library is not in data/app/<path>/lib/<abi> anymore.
             // So we need to extract it.
             ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo("com.rtsoft.growtopia", 0);
@@ -127,7 +123,4 @@ public class Main extends Activity {
             });
         }
     }
-
-    public static native void nativeLoadFontForImGui(AssetManager assetManager);
-    public static native void nativeOnFloatingMode(boolean floatingMode);
 }

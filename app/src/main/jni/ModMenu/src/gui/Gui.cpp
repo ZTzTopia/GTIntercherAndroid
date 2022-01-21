@@ -82,7 +82,7 @@ namespace gui {
 
         style.WindowPadding = ImVec2(0.0f, 0.0f);
         style.WindowBorderSize = 0.0f;
-        style.WindowRounding = 4.0f;
+        style.WindowRounding = 8.0f;
 
         style.ScrollbarSize = m_scale.y * 35.0f;
 

@@ -1,6 +1,8 @@
+#include <sol/sol.hpp>
+#include <string.h>
+
 #include "Ui.h"
 #include "Gui.h"
-#include "TextEditor.h"
 #include "Utils.h"
 #include "game/Game.h"
 #include "game/Hook.h"
@@ -18,17 +20,17 @@ namespace gui {
             ImVec2 p = ImGui::GetCursorScreenPos();
             ImGui::GetWindowDrawList()->AddRectFilled(
                     ImVec2(p.x, p.y),
-                    ImVec2(p.x + ImGui::GetWindowWidth(), p.y + ImGui::GetCursorPosY() + 7 +
-                    style.ItemSpacing.y + ImGui::GetFontSize() + ImGui::GetCursorPosY() + 12 +
-                    ImGui::CalcTextSize("ABC").x),
+                    ImVec2(p.x + ImGui::GetWindowWidth(), p.y + ImGui::GetCursorPosY() + 19 +
+                    style.ItemSpacing.y + ImGui::GetFontSize() + ImGui::CalcTextSize("ABC").x),
                     ImColor(47, 54, 64, 255),
-                    4.0f);
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 7);
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 7);
+                    8.0f);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 19);
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 19);
+            ImGui::PushFont(g_gui->m_bold_font);
             ImGui::Text("GTInternal");
+            ImGui::PopFont();
             ImGui::SameLine();
             ImGui::TextColored(ImColor(117, 119, 123, 255), "v0.0.3");
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 12);
 
             utils::BeginTab("##ModMenuTab", 3, false, ImVec2(0.0f, ImGui::CalcTextSize("ABC").x));
 
@@ -144,19 +146,32 @@ namespace gui {
                 // Load a file.
             }
 
-            static TextEditor editor;
+            static char *lua_error_message = new char[128];
+            if (lua_error_message[0] != '\0') {
+                utils::text_small_colored_wrapped(ImColor(255, 92, 92, 255), lua_error_message);
+            }
 
-            editor.SetShowWhitespaces(false);
-            editor.SetReadOnly(true);
-            editor.SetPalette(TextEditor::GetDarkPalette());
-            editor.SetLanguageDefinition(TextEditor::LanguageDefinition::Lua());
-
-            ImVec2 frame_padding_before = ImGui::GetStyle().FramePadding;
-            editor.Render("##EditorWindow", ImVec2(ImGui::GetWindowWidth() - (frame_padding_before.x * 2.0f), 300));
+            static char buf[128]{ 0 };
+            ImGui::InputTextMultiline("##EditTextTest", buf, IM_ARRAYSIZE(buf), ImVec2(-1.0f, ImGui::GetFontSize() * 8.0f));
 
             ImGui::Dummy(ImVec2(0.0f, ImGui::GetStyle().ItemSpacing.y * 0.15f));
             if (utils::button(ICON_FA_CHECK" Execute", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
-                // Run script.
+                sol::state lua;
+                lua.open_libraries();
+                lua.set_function("print", [](const std::string& str) {
+                    ImGui::Text(str.c_str());
+                    LOGD("[LUA] %s", str.c_str());
+                });
+
+                try {
+                    lua.script(buf);
+                    lua_error_message[0] = '\0';
+                }
+                catch (const sol::error& e) {
+                    strncpy(lua_error_message, e.what(), strlen(e.what()));
+                    lua_error_message[strlen(e.what())] = '\0';
+                    LOGE("[LUA] %s", e.what());
+                }
             }
             ImGui::SameLine();
             if (utils::button(ICON_FA_STOP" Stop", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
@@ -164,7 +179,7 @@ namespace gui {
             }
             ImGui::SameLine();
             if (utils::button(ICON_FA_TRASH" Clear", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
-                editor.SetText("");
+                buf[0] = '\0';
             }
         }
     } // namespace ui

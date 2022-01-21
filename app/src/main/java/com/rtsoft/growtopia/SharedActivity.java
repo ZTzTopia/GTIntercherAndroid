@@ -449,12 +449,10 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         if (inFloatingMode && aleardyAtHome) {
             SharedActivity.app.aleardyAtHome = false;
             FloatingService.mFloatingService.showFloatingWindow(false);
-            Main.nativeOnFloatingMode(false);
         }
 
         if (!inFloatingMode && aleardyAtHome) {
             SharedActivity.app.aleardyAtHome = false;
-            Main.nativeOnFloatingMode(false);
         }
     }
 
