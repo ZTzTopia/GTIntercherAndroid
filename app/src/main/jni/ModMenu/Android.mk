@@ -67,6 +67,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/vendor/lua
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/vendor/sol2/include
 
 FILE_LIST := $(wildcard $(LOCAL_PATH)/src/*.c*)
+FILE_LIST += $(wildcard $(LOCAL_PATH)/src/api/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/client/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/game/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/gui/*.c*)

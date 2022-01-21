@@ -27,6 +27,7 @@
 JavaVM *g_java_vm{ nullptr };
 void *g_growtopia_handle{ nullptr };
 KittyMemory::ProcMap g_growtopia_map{};
+api::LuaApi *g_lua_api{ nullptr };
 
 void *main_thread(void *) {
     utilities::crash_dump::init();
@@ -43,6 +44,7 @@ void *main_thread(void *) {
         sleep(1);
     } while (g_growtopia_handle == nullptr);
 
+    g_lua_api = new api::LuaApi{};
     game::hook::init();
 
     // Now we can exit the thread.
@@ -57,4 +59,11 @@ void constructor_main() {
     // stuck.
     pthread_t pthread_id{};
     pthread_create(&pthread_id, nullptr, main_thread, nullptr);
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+JNI_OnLoad(JavaVM* java_vm, void* reserved) {
+    g_java_vm = java_vm;
+    return JNI_VERSION_1_6;
 }

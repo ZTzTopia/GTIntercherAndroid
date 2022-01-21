@@ -134,11 +134,18 @@ namespace gui {
         Gui::Begin();
         {
             ImVec2 basedWindowSize = ImVec2(m_screenSize.x / 2.0f, m_screenSize.y / 1.5f);
-            ImGui::SetNextWindowSize(basedWindowSize);
 
+            ImGui::SetNextWindowSize(basedWindowSize);
             ImGui::Begin("##GTInternalAndroid", nullptr, ImGuiWindowFlags_NoDecoration);
             {
                 ui::render_main();
+            }
+            ImGui::End();
+
+            ImGui::SetNextWindowSize(basedWindowSize);
+            ImGui::Begin("##LuaErrorLog", nullptr, ImGuiWindowFlags_NoDecoration);
+            {
+                ui::render_lua_error_log();
             }
             ImGui::End();
         }

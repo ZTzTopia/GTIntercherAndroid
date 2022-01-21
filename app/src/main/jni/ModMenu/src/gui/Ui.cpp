@@ -119,20 +119,20 @@ namespace gui {
             utils::category("All");
 
             static char buf[32]{ 0 };
-            utils::input_text("Name", "##Name", buf, IM_ARRAYSIZE(buf),
+            utils::input_text(ICON_FA_USER" Name", "##Name", buf, IM_ARRAYSIZE(buf),
                               ImGuiInputTextFlags_CharsNoBlank);
 
             static char buf2[18]{ 0 };
-            utils::input_text("Password", "##Password", buf2, IM_ARRAYSIZE(buf2),
+            utils::input_text(ICON_FA_LOCK" Password", "##Password", buf2, IM_ARRAYSIZE(buf2),
                               ImGuiInputTextFlags_Password);
 
             if (g_port != 65535) {
-                if (utils::button("Login", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
+                if (utils::button(ICON_FA_CHECK" Login", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
                     // Connect to server.
                 }
             }
             else {
-                utils::text_small_colored_wrapped(ImColor(255, 92, 92, 255), "This is use auto port "
+                utils::text_small_colored_wrapped(ImColor(255, 92, 92, 255), ICON_FA_TIMES" This is use auto port "
                                                                 "via growtopia hook so "
                                                                 "you need to login with "
                                                                 "your account first!");
@@ -142,44 +142,70 @@ namespace gui {
         void render_lua_executor_content() {
             utils::category("All");
 
-            if (utils::button(ICON_FA_FILE" Load from file", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
-                // Load a file.
-            }
+            /*if (utils::button(ICON_FA_FILE" Load from file", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
 
-            static char *lua_error_message = new char[128];
-            if (lua_error_message[0] != '\0') {
-                utils::text_small_colored_wrapped(ImColor(255, 92, 92, 255), lua_error_message);
-            }
+            }*/
 
-            static char buf[128]{ 0 };
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetFontSize() * 0.5f, ImGui::GetFontSize() * 0.5f));
+            static char buf[1024]{ 0 };
             ImGui::InputTextMultiline("##EditTextTest", buf, IM_ARRAYSIZE(buf), ImVec2(-1.0f, ImGui::GetFontSize() * 8.0f));
+            ImGui::PopStyleVar();
 
             ImGui::Dummy(ImVec2(0.0f, ImGui::GetStyle().ItemSpacing.y * 0.15f));
             if (utils::button(ICON_FA_CHECK" Execute", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
-                sol::state lua;
-                lua.open_libraries();
-                lua.set_function("print", [](const std::string& str) {
-                    ImGui::Text(str.c_str());
-                    LOGD("[LUA] %s", str.c_str());
-                });
-
-                try {
-                    lua.script(buf);
-                    lua_error_message[0] = '\0';
-                }
-                catch (const sol::error& e) {
-                    strncpy(lua_error_message, e.what(), strlen(e.what()));
-                    lua_error_message[strlen(e.what())] = '\0';
-                    LOGE("[LUA] %s", e.what());
-                }
+                g_lua_api->execute_script(buf);
             }
             ImGui::SameLine();
             if (utils::button(ICON_FA_STOP" Stop", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
-                // Stop script.
+                g_lua_api->stop();
             }
             ImGui::SameLine();
             if (utils::button(ICON_FA_TRASH" Clear", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
                 buf[0] = '\0';
+            }
+        }
+
+        void render_lua_error_log() {
+            ImGuiStyle &style = ImGui::GetStyle();
+
+            static std::vector<std::string> error_list;
+            if (!g_lua_api->get_last_error().empty()) {
+                error_list.push_back(g_lua_api->get_last_error());
+                g_lua_api->clear_last_error();
+            }
+
+            // Title bar.
+            ImVec2 p = ImGui::GetCursorScreenPos();
+            ImGui::GetWindowDrawList()->AddRectFilled(
+                    ImVec2(p.x, p.y),
+                    ImVec2(p.x + ImGui::GetWindowWidth(), p.y + ImGui::GetCursorPosY() + 19 + style.ItemSpacing.y + ImGui::GetFontSize() * 1.5f),
+                    ImColor(47, 54, 64, 255),
+                    8.0f);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 19);
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 19);
+            ImGui::PushFont(g_gui->m_bold_font);
+            ImGui::Text("Lua error log");
+            ImGui::PopFont();
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize(ICON_FA_TIMES).x * 2.0f - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+            if (utils::button(ICON_FA_TIMES, ImVec2(ImGui::CalcTextSize(ICON_FA_TIMES).x * 2.0f, ImGui::GetFontSize() * 1.2f))) {
+                error_list.clear();
+            }
+            ImGui::PopStyleVar();
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 36);
+
+            if (!error_list.empty()) {
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_gui->m_scale.x * 8.0f);
+                ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.75f), false, ImGuiWindowFlags_AlwaysUseWindowPadding);
+
+                for (auto& error : error_list) {
+                    utils::text_small_colored_wrapped(ImColor(255, 92, 92, 255), ICON_FA_TIMES" %s", error.c_str());
+                }
+
+                ImGui::EndChild();
+                ImGui::PopStyleVar(2);
             }
         }
     } // namespace ui
