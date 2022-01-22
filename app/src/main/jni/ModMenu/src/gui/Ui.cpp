@@ -65,7 +65,7 @@ namespace gui {
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_gui->m_scale.x * 8.0f);
-            ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.75f), false, ImGuiWindowFlags_AlwaysUseWindowPadding);
+            ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.71f), false, ImGuiWindowFlags_AlwaysUseWindowPadding);
 
             switch (tab_page) {
                 case 0:

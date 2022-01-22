@@ -44,12 +44,18 @@ namespace gui {
             ImGui::PopStyleVar();
             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 36);
 
-            if (!m_log_entry.empty()) {
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
-                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_gui->m_scale.x * 8.0f);
-                ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.75f), false, ImGuiWindowFlags_AlwaysUseWindowPadding);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(ImGui::GetFontSize() * 0.5f, ImGui::GetFontSize() * 0.5f));
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, g_gui->m_scale.x * 8.0f);
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(45.0f / 255.0f, 49.0f / 255.0f, 58.0f / 255.0f, 1.0f));
+            ImGui::Dummy(ImVec2(style.FramePadding.x, 0.0f));
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x - style.FramePadding.x * 2.0f, ImGui::GetWindowSize().y * 0.71f), false, ImGuiWindowFlags_AlwaysUseWindowPadding);
 
+            if (!m_log_entry.empty()) {
+                std::string full_log_entry{};
                 for (auto &log_entry : m_log_entry) {
+                    full_log_entry += log_entry.m_message + "\n";
+
                     const char *icon = ICON_FA_INFO_CIRCLE;
                     ImColor color = ImColor(92, 92, 255, 255);
                     if (log_entry.m_type == LogEntry::WARNING) {
@@ -68,10 +74,11 @@ namespace gui {
                 if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
                     ImGui::SetScrollHereY(1.0f);
                 }
-
-                ImGui::EndChild();
-                ImGui::PopStyleVar(2);
             }
+
+            ImGui::EndChild();
+            ImGui::PopStyleColor();
+            ImGui::PopStyleVar(2);
         }
         ImGui::End();
     }

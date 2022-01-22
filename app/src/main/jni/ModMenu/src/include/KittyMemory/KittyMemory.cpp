@@ -286,16 +286,43 @@ uintptr_t KittyMemory::getAbsoluteAddress(ProcMap libMap, uintptr_t relativeAddr
     return (reinterpret_cast<uintptr_t>(libMap.startAddr) + relativeAddr);
 }
 
+// hex to int
+int hex2int(char ch) {
+    if (ch >= '0' && ch <= '9') {
+        return ch - '0';
+    }
+    if (ch >= 'A' && ch <= 'F') {
+        return ch - 'A' + 10;
+    }
+    if (ch >= 'a' && ch <= 'f') {
+        return ch - 'a' + 10;
+    }
+    return -1;
+}
+
 bool KittyMemory::compareData(const char *data, const char *pattern) {
-    bool found = false;
-    for (; *data; ++data, ++pattern) {
-        if (*data == *pattern || *pattern == '?') {
-            found = true;
+    std::vector<uint8_t> aaa;
+
+    const char *pattern_to_compare = pattern;
+    for (; *pattern_to_compare;) {
+        if (isspace(*pattern_to_compare)) {
+            *pattern_to_compare++;
+            continue;
         }
-        else {
-            found = false;
-            break;
+
+        if (*pattern_to_compare == '?') {
+            aaa.push_back(0x0);
+            pattern_to_compare++;
+            continue;
+        }
+
+        aaa.push_back(hex2int(*pattern_to_compare++) * 16 + hex2int(*(pattern_to_compare++)));
+    }
+
+    for (size_t i = 0; i < strlen(pattern) / 2; i++, data++) {
+        if (*data != aaa[i] && aaa[i] != 0x0) {
+            return false;
         }
     }
-    return found;
+    return true;
 }

@@ -8,6 +8,7 @@ namespace api {
         LuaApi();
         ~LuaApi() {};
 
+        void execute(const char *script, bool is_file);
         void execute_script(const char *script);
         void execute_lua_file(const char *path);
         void stop();

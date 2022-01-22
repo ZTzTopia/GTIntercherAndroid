@@ -46,24 +46,32 @@ namespace api {
         });
 
         m_sol_state->set_function("memRead", [print](const uintptr_t &address, const int &len) {
-            std::vector<uint8_t> code;
-            KittyMemory::memRead(&code[0], reinterpret_cast<void *>(address), len);
-
-            std::string result;
-            KittyUtils::toHex(&code[0], code.size(), result);
-            print(utilities::utils::string_format("Data: %s", result.c_str()));
+            print(utilities::utils::string_format("Data: %s", KittyMemory::read2HexStr(reinterpret_cast<void *>(address), len).c_str()));
         });
 
         m_sol_state->set_function("memWrite", [](const uintptr_t &address, const std::string &hex, const int &len) {
             std::vector<uint8_t> code;
+            code.resize(len);
+
             KittyUtils::fromHex(hex, &code[0]);
-            KittyMemory::memWrite(reinterpret_cast<void *>(address), &code[0], len);
+            LOGD("[Lua] Writing %d bytes to 0x%x", code.size(), address);
+            if (KittyMemory::memWrite(reinterpret_cast<void *>(address), &code[0], len) != KittyMemory::SUCCESS) {
+                LOGE("[Lua] Failed to write memory");
+            }
         });
 
         m_sol_state->set_function("patternScan", sol::overload([print](const std::string &pattern) {
-            print(utilities::utils::string_format("Found: 0x%X", KittyMemory::patternScan(g_growtopia_map, pattern.c_str())));
+            print(utilities::utils::string_format("Pattern address: 0x%X", KittyMemory::patternScan(g_growtopia_map, pattern.c_str())));
         }, [print](const std::string &pattern, const intptr_t &offset) {
-            print(utilities::utils::string_format("Found: 0x%X", KittyMemory::patternScan(g_growtopia_map, pattern.c_str(), offset)));
+            print(utilities::utils::string_format("Pattern address: 0x%X", KittyMemory::patternScan(g_growtopia_map, pattern.c_str(), offset)));
+        }));
+
+        m_sol_state->set_function("getAddressFromSymbol", sol::overload([print](const std::string &symbol) {
+            print(utilities::utils::string_format("Symbol address: 0x%X", reinterpret_cast<uintptr_t>(dlsym(nullptr, symbol.c_str()))));
+        }));
+
+        m_sol_state->set_function("compareData", sol::overload([print](const uintptr_t &address, const std::string &pattern) {
+            print(utilities::utils::string_format("Same data: %s", KittyMemory::compareData(reinterpret_cast<char *>(address), pattern.c_str()) ? "true" : "false"));
         }));
     }
 
@@ -71,30 +79,30 @@ namespace api {
     // I don't know how to do this properly :).
     std::atomic<bool> hah{ false };
     std::atomic<bool> huh{ false };
-    void lua_execution_thread(const char *script, bool is_file) {
-        auto result = g_lua_api->get_sol_state()->script(script, sol::script_pass_on_error);
+    void lua_execution_thread(LuaApi *lua_api, const char *script, bool is_file) {
+        auto result = lua_api->get_sol_state()->script(script, sol::script_pass_on_error);
         if (!result.valid()) {
             if (!huh.load()) {
                 g_lua_log->add(LogEntry::ERROR, static_cast<sol::error>(result).what());
                 LOGE("[Lua] Failed to execute script (code: %d)", result.status());
             }
-
-            g_lua_api->get_sol_state()->set("AmEY9hS0d5SUezKolklC", 0);
         }
 
         hah.store(false);
         huh.store(false);
     }
 
-    void execute(const char *script, bool is_file) {
+    void LuaApi::execute(const char *script, bool is_file) {
         if (hah.load()) {
             g_lua_log->add(LogEntry::WARNING, "Stop previous script before executing new one.");
             return;
         }
 
+        m_sol_state->set("AmEY9hS0d5SUezKolklC", 0);
+
         hah.store(true);
 
-        std::thread lua_thread(lua_execution_thread, script, is_file);
+        std::thread lua_thread(lua_execution_thread, this, script, is_file);
         lua_thread.detach();
     }
 
