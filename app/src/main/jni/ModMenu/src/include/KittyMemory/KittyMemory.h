@@ -248,7 +248,17 @@ namespace KittyMemory {
     template <typename Type = void*>
     Type patternScan(const size_t start, const size_t end, const char* pattern, const intptr_t offset = 0) {
         Type ret = Type(0x0);
-        if (start > 0 && end > 0 && pattern) {
+
+        for (; *pattern; ++pattern) {
+            if (!isxdigit(*pattern)) {
+                return ret;
+            }
+        }
+
+        // Reset to start position.
+        pattern = 0;
+
+        if (start > 0 && end > 0 && strlen(pattern) > 0) {
             for (size_t i = 0; i <= end - start; i++) {
                 if (compareData(reinterpret_cast<char* >(start + i), pattern)) {
                     ret = Type(i + offset);

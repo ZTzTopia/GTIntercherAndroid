@@ -60,9 +60,11 @@ namespace api {
             KittyMemory::memWrite(reinterpret_cast<void *>(address), &code[0], len);
         });
 
-        m_sol_state->set_function("patternScan", [print](const std::string &pattern, const intptr_t &offset = 0) {
+        m_sol_state->set_function("patternScan", sol::overload([print](const std::string &pattern) {
+            print(utilities::utils::string_format("Found: 0x%X", KittyMemory::patternScan(g_growtopia_map, pattern.c_str())));
+        }, [print](const std::string &pattern, const intptr_t &offset) {
             print(utilities::utils::string_format("Found: 0x%X", KittyMemory::patternScan(g_growtopia_map, pattern.c_str(), offset)));
-        });
+        }));
     }
 
     // Make lua not run in main c++ thread.
