@@ -41,10 +41,11 @@ namespace gui {
             bool ret{ false };
 
             // ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, g_gui->m_scale.x * 2.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_gui->m_scale.x * 8.0f);
             ImGui::PushFont(g_gui->m_small_font);
             ret = ImGui::Button(label, size);
             ImGui::PopFont();
-            // ImGui::PopStyleVar();
+            ImGui::PopStyleVar();
             return ret;
         }
 
