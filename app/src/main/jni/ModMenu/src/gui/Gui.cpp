@@ -11,11 +11,16 @@
 #define MULT_X	0.00052083333f	// 1/1920
 #define MULT_Y	0.00092592592f 	// 1/1080
 
+gui::LuaLog *g_lua_log{ nullptr };
+
 namespace gui {
     Gui::Gui() 
         : m_screenSize(ImVec2()),
         m_scale(ImVec2()),
-        m_needClearMousePos(true) {}
+        m_needClearMousePos(true)
+    {
+        g_lua_log = new LuaLog();
+    }
 
     Gui::~Gui() {
         // Cleanup
@@ -134,20 +139,15 @@ namespace gui {
         Gui::Begin();
         {
             ImVec2 basedWindowSize = ImVec2(m_screenSize.x / 2.0f, m_screenSize.y / 1.5f);
-
             ImGui::SetNextWindowSize(basedWindowSize);
+
             ImGui::Begin("##GTInternalAndroid", nullptr, ImGuiWindowFlags_NoDecoration);
             {
                 ui::render_main();
             }
             ImGui::End();
 
-            ImGui::SetNextWindowSize(basedWindowSize);
-            ImGui::Begin("##LuaErrorLog", nullptr, ImGuiWindowFlags_NoDecoration);
-            {
-                ui::render_lua_error_log();
-            }
-            ImGui::End();
+            g_lua_log->render();
         }
         Gui::End();
 

@@ -140,20 +140,20 @@ Memory_Status KittyMemory::memRead(void *buffer, void *addr, size_t len) {
     if (len < 1 || len > INT_MAX)
         return INV_LEN;
 
-//    int prot = GetMemoryPermission(addr);
-//    if (prot == 0)
-//        return INV_PROT;
+    int prot = GetMemoryPermission(addr);
+    if (prot == 0)
+        return INV_PROT;
 
-//    if (!(prot & PROT_READ)) {
-        if (!ProtectAddr(addr, len, _PROT_RWX_))
+    if (!(prot & PROT_READ)) {
+        if (!ProtectAddr(addr, len, prot | PROT_READ))
             return INV_PROT;
-//    }
+    }
 
     if (memcpy(buffer, addr, len) != nullptr) {
-//        if (!(prot & PROT_READ)) {
-//            if (!ProtectAddr(addr, len, prot))
-//                return INV_PROT;
-//        }
+        if (!(prot & PROT_READ)) {
+            if (!ProtectAddr(addr, len, prot))
+                return INV_PROT;
+        }
 
         return SUCCESS;
     }
@@ -182,29 +182,35 @@ std::string KittyMemory::read2HexStr(void *addr, size_t len) {
     return ret;
 }
 
-Memory_Status KittyMemory::makeNOP(void *ptr, size_t len) {
+Memory_Status KittyMemory::makeNOP(void *ptr, size_t len, bool thumb) {
     if (ptr == nullptr)
         return INV_ADDR;
 
     if (len < 1 || len > INT_MAX)
         return INV_LEN;
 
-//    int prot = GetMemoryPermission(ptr);
-//    if (prot == 0)
-//        return INV_PROT;
+    int prot = GetMemoryPermission(ptr);
+    if (prot == 0)
+        return INV_PROT;
 
-//    if (!(prot & PROT_WRITE)) {
-        if (!ProtectAddr(ptr, len, _PROT_RWX_))
+    if (!(prot & PROT_WRITE)) {
+        if (!ProtectAddr(ptr, len, prot | PROT_WRITE))
             return INV_PROT;
-//    }
+    }
 
     auto finalPtr = reinterpret_cast<uintptr_t>(ptr);
-    for (uintptr_t ptr = finalPtr; ptr != (finalPtr + (len * 4)); ptr += 4) {
+    for (uintptr_t ptr = finalPtr; ptr != (finalPtr + (len * thumb ? 2 : 4)); ptr += thumb ? 2 : 4) {
 #ifdef __arm__
-        *(char*)ptr = 0x00;
-        *(char*)(ptr+1) = 0xF0;
-        *(char*)(ptr+2) = 0x20;
-        *(char*)(ptr+3) = 0xE3;
+        if (thumb) {
+            *(char*)ptr = 0x00;
+            *(char*)(ptr+1) = 0xBF;
+        }
+        else {
+            *(char*)ptr = 0x00;
+            *(char*)(ptr+1) = 0xF0;
+            *(char*)(ptr+2) = 0x20;
+            *(char*)(ptr+3) = 0xE3;
+        }
 #elif __aarch64__
         *(char*)ptr = 0x1F;
         *(char*)(ptr+1) = 0x20;
@@ -213,10 +219,10 @@ Memory_Status KittyMemory::makeNOP(void *ptr, size_t len) {
 #endif
     }
 
-//    if (!(prot & PROT_WRITE)) {
-//        if (!ProtectAddr(ptr, len, prot))
-//            return INV_PROT;
-//    }
+    if (!(prot & PROT_WRITE)) {
+        if (!ProtectAddr(ptr, len, prot))
+            return INV_PROT;
+    }
 
     return SUCCESS;
 }
@@ -278,4 +284,18 @@ uintptr_t KittyMemory::getAbsoluteAddress(ProcMap libMap, uintptr_t relativeAddr
         return 0;
 
     return (reinterpret_cast<uintptr_t>(libMap.startAddr) + relativeAddr);
+}
+
+bool KittyMemory::compareData(const char *data, const char *pattern) {
+    bool found = false;
+    for (; *data; ++data, ++pattern) {
+        if (*data == *pattern || *pattern == '?') {
+            found = true;
+        }
+        else {
+            found = false;
+            break;
+        }
+    }
+    return found;
 }

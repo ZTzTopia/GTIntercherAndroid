@@ -1,4 +1,3 @@
-#include <sol/sol.hpp>
 #include <string.h>
 
 #include "Ui.h"
@@ -163,49 +162,13 @@ namespace gui {
             if (utils::button(ICON_FA_TRASH" Clear", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
                 buf[0] = '\0';
             }
-        }
 
-        void render_lua_error_log() {
-            ImGuiStyle &style = ImGui::GetStyle();
-
-            static std::vector<std::string> error_list;
-            if (!g_lua_api->get_last_error().empty()) {
-                error_list.push_back(g_lua_api->get_last_error());
-                g_lua_api->clear_last_error();
+            if (utils::button(ICON_FA_STICKY_NOTE" Toggle log", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
+                g_lua_log->toggle();
             }
-
-            // Title bar.
-            ImVec2 p = ImGui::GetCursorScreenPos();
-            ImGui::GetWindowDrawList()->AddRectFilled(
-                    ImVec2(p.x, p.y),
-                    ImVec2(p.x + ImGui::GetWindowWidth(), p.y + ImGui::GetCursorPosY() + 19 + style.ItemSpacing.y + ImGui::GetFontSize() * 1.5f),
-                    ImColor(47, 54, 64, 255),
-                    8.0f);
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 19);
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 19);
-            ImGui::PushFont(g_gui->m_bold_font);
-            ImGui::Text("Lua error log");
-            ImGui::PopFont();
             ImGui::SameLine();
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize(ICON_FA_TIMES).x * 2.0f - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-            if (utils::button(ICON_FA_TIMES, ImVec2(ImGui::CalcTextSize(ICON_FA_TIMES).x * 2.0f, ImGui::GetFontSize() * 1.2f))) {
-                error_list.clear();
-            }
-            ImGui::PopStyleVar();
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 36);
-
-            if (!error_list.empty()) {
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
-                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_gui->m_scale.x * 8.0f);
-                ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.75f), false, ImGuiWindowFlags_AlwaysUseWindowPadding);
-
-                for (auto& error : error_list) {
-                    utils::text_small_colored_wrapped(ImColor(255, 92, 92, 255), ICON_FA_TIMES" %s", error.c_str());
-                }
-
-                ImGui::EndChild();
-                ImGui::PopStyleVar(2);
+            if (utils::button(ICON_FA_STICKY_NOTE" Clear log", ImVec2(0.0f, ImGui::GetFontSize() * 2.0f))) {
+                g_lua_log->clear();
             }
         }
     } // namespace ui

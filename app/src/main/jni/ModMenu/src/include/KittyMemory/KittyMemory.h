@@ -77,7 +77,7 @@ namespace KittyMemory {
     /*
      *
      */
-    Memory_Status makeNOP(void *ptr, size_t len=2);
+    Memory_Status makeNOP(void *ptr, size_t len=2, bool thumb=false);
 
     /*
      * Wrapper to dereference & get value of a multi level pointer
@@ -164,12 +164,58 @@ namespace KittyMemory {
     /*
      *
      */
-    template <typename Type, typename...Type2>
-    Type callFunction(void *ptr, Type2...args) {
+    template <typename Ret, typename...Args>
+    Ret callFunction(void *ptr, Args...args) {
         if (ptr == nullptr)
-            return Type();
+            return Ret();
 
-        return reinterpret_cast<Type(__cdecl *)(Type2...)>(ptr)(args...);
+        uintptr_t address_ = reinterpret_cast<uintptr_t>(ptr);
+        return reinterpret_cast<Ret(__cdecl *)(Args...)>(address_)(args...);
+    }
+
+    /*
+     *
+     */
+    template <typename Ret, typename C, typename... Args>
+    Ret callMethod(void *ptr, C thiz, Args...args) {
+        volatile uintptr_t address_ = reinterpret_cast<uintptr_t>(ptr);
+        return reinterpret_cast<Ret(__thiscall *)(C, Args...)>(address_)(thiz, args...);
+    }
+
+    /*
+     * call cdecl function with given arguments
+     */
+    template <typename Ret, typename...Args>
+    Ret callFunctionCedcl(void *ptr, Args...args) {
+        if (ptr == nullptr)
+            return Ret();
+
+        volatile uintptr_t address_ = reinterpret_cast<uintptr_t>(ptr);
+        return reinterpret_cast<Ret(__cdecl *)(Args...)>(address_)(args...);
+    }
+
+    /*
+     * call fastcall function with given arguments
+     */
+    template <typename Ret, typename...Args>
+    Ret callFunctionFastCall(void *ptr, Args...args) {
+        if (ptr == nullptr)
+            return Ret();
+
+        volatile uintptr_t address_ = reinterpret_cast<uintptr_t>(ptr);
+        return reinterpret_cast<Ret(__fastcall *)(Args...)>(address_)(args...);
+    }
+
+    /*
+     * call stdcall function with given arguments
+     */
+    template <typename Ret, typename...Args>
+    Ret callFunctionStdCall(void *ptr, Args...args) {
+        if (ptr == nullptr)
+            return Ret();
+
+        volatile uintptr_t address_ = reinterpret_cast<uintptr_t>(ptr);
+        return reinterpret_cast<Ret(__stdcall *)(Args...)>(address_)(args...);
     }
 	
     /*
@@ -193,20 +239,7 @@ namespace KittyMemory {
      * Comparing data with pattern
      * Returns false if data not match the pattern
      */
-    /*bool matchPattern(const char* data, const char* pattern) {
-        bool found = false;
-        for (; *data; ++data, ++pattern) {
-            if (*data == *pattern || *pattern == '?') {
-                found = true;
-            }
-            else {
-                found = false;
-                break;
-            }
-        }
-
-        return found;
-    }*/
+    bool compareData(const char *data, const char *pattern);
 
     /*
      * Scan all address signatures according to the pattern
@@ -215,22 +248,13 @@ namespace KittyMemory {
     template <typename Type = void*>
     Type patternScan(const size_t start, const size_t end, const char* pattern, const intptr_t offset = 0) {
         Type ret = Type(0x0);
-
-        /*int prot = GetMemoryPermission(reinterpret_cast<void*>(start));
-        if (!ProtectAddr(reinterpret_cast<void*>(start), end - start, _PROT_RWX_)) {
-            return ret;
-        }*/
-
-        /*if (start > 0 && end > 0 && pattern) {
+        if (start > 0 && end > 0 && pattern) {
             for (size_t i = 0; i <= end - start; i++) {
-                if (matchPattern(reinterpret_cast<char* >(start + i), pattern)) {
+                if (compareData(reinterpret_cast<char* >(start + i), pattern)) {
                     ret = Type(i + offset);
                 }
             }
-        }*/
-
-        // ProtectAddrReal(reinterpret_cast<void*>(start), end - start, prot);
-
+        }
         return ret;
     }
 
@@ -242,7 +266,6 @@ namespace KittyMemory {
     Type patternScan(const ProcMap map, const char* pattern, const intptr_t offset = 0) {
         size_t start = reinterpret_cast<size_t>(map.startAddr);
         size_t end = reinterpret_cast<size_t>(map.endAddr);
-
         return patternScan<Type>(start, end, pattern, offset);
     }
 }

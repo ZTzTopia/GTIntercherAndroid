@@ -4,6 +4,10 @@
 #include <imgui_internal.h>
 #include <backends/imgui_impl_opengl3.h>
 
+#include "LuaLog.h"
+
+extern gui::LuaLog *g_lua_log;
+
 namespace gui {
     class Gui {
     public:

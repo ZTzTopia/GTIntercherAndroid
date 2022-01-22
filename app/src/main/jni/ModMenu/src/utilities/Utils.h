@@ -16,5 +16,6 @@ namespace utilities {
 
         void string_replace(std::string &str, const std::string &from, const std::string &to);
         std::vector<std::string> string_tokenize(const std::string &str, const std::string &delimiters);
+        std::string string_format(const std::string &fmt, ...);
     } // namespace utils
 } // namespace utilities

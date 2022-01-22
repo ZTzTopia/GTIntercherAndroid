@@ -24,6 +24,7 @@ private:
 
     std::string _hexString;
     bool _is_nop;
+    bool _is_nop_thumb;
 
 public:
     MemoryPatch();
@@ -53,8 +54,8 @@ public:
      * NOOOOOOOOOP PATCH OK?
      */
     static MemoryPatch nopPatch(const char *libraryName, uintptr_t address,
-                                size_t patch_size, bool useMapCache=true);
-    static MemoryPatch nopPatch(uintptr_t absolute_address, size_t patch_size);
+                                size_t patch_size, bool useMapCache=true, bool thumb=false);
+    static MemoryPatch nopPatch(uintptr_t absolute_address, size_t patch_size, bool thumb=false);
 
     /*
      * Validate patch

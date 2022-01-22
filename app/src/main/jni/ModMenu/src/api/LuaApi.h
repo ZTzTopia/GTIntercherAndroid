@@ -1,4 +1,5 @@
 #pragma once
+#define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>
 
 namespace api {
@@ -7,18 +8,17 @@ namespace api {
         LuaApi();
         ~LuaApi() {};
 
-        sol::call_status execute_script(const char *script);
-        sol::call_status execute_lua_file(const char *path);
-        int stop();
+        void execute_script(const char *script);
+        void execute_lua_file(const char *path);
+        void stop();
 
-        std::string get_last_error();
-        void clear_last_error() { m_lua_error.clear(); }
+        sol::state *get_sol_state() { return m_sol_state; }
 
     private:
+        void init_lua();
         void init_uncategorized();
 
     private:
-        sol::state *m_lua;
-        std::string m_lua_error;
+        sol::state *m_sol_state;
     }; // class Api
 } // namespace api

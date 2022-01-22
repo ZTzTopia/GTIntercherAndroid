@@ -106,7 +106,7 @@ MemoryPatch MemoryPatch::createWithHex(uintptr_t absolute_address, std::string h
 }
 
 MemoryPatch MemoryPatch::nopPatch(const char *libraryName, uintptr_t address,
-                                       size_t patch_size, bool useMapCache) {
+                                       size_t patch_size, bool useMapCache, bool thumb) {
     MemoryPatch patch;
 
     if (libraryName == NULL || address == 0)
@@ -119,13 +119,14 @@ MemoryPatch MemoryPatch::nopPatch(const char *libraryName, uintptr_t address,
 
     patch._orig_code.resize(patch._size);
     patch._is_nop = true;
+    patch._is_nop_thumb = thumb;
 
     // backup current content
     KittyMemory::memRead(&patch._orig_code[0], reinterpret_cast<void *>(patch._address), patch._size);
     return patch;
 }
 
-MemoryPatch MemoryPatch::nopPatch(uintptr_t absolute_address, size_t patch_size) {
+MemoryPatch MemoryPatch::nopPatch(uintptr_t absolute_address, size_t patch_size, bool thumb) {
     MemoryPatch patch;
 
     if (absolute_address == 0)
@@ -136,6 +137,7 @@ MemoryPatch MemoryPatch::nopPatch(uintptr_t absolute_address, size_t patch_size)
 
     patch._orig_code.resize(patch._size);
     patch._is_nop = true;
+    patch._is_nop_thumb = thumb;
 
     // backup current content
     KittyMemory::memRead(&patch._orig_code[0], reinterpret_cast<void *>(patch._address), patch._size);
@@ -165,7 +167,7 @@ bool MemoryPatch::Modify() {
     if (!_is_nop)
         return (KittyMemory::memWrite(reinterpret_cast<void *>(_address), &_patch_code[0], _size) == Memory_Status::SUCCESS);
     else
-        return (KittyMemory::makeNOP(reinterpret_cast<void *>(_address), _size) == Memory_Status::SUCCESS);
+        return (KittyMemory::makeNOP(reinterpret_cast<void *>(_address), _size, _is_nop_thumb) == Memory_Status::SUCCESS);
 }
 
 std::string MemoryPatch::get_CurrBytes() {
