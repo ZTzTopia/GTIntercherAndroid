@@ -16,6 +16,7 @@ namespace api {
     }
 
     void LuaApi::init_lua() {
+        // Script to use for stopping the script. (maybe not needed anymore, who knows?)
         m_sol_state->script(R"(AmEY9hS0d5SUezKolklC = 0
             debug.sethook(function(event, line)
                 if AmEY9hS0d5SUezKolklC > 0 then
@@ -77,30 +78,53 @@ namespace api {
 
     // Make lua not run in main c++ thread.
     // I don't know how to do this properly :).
-    std::atomic<bool> hah{ false };
-    std::atomic<bool> huh{ false };
+    static std::atomic<bool> g_script_running{ false };
+    static std::atomic<bool> g_stop_script{ false };
     void lua_execution_thread(LuaApi *lua_api, const char *script, bool is_file) {
-        auto result = lua_api->get_sol_state()->script(script, sol::script_pass_on_error);
-        if (!result.valid()) {
-            if (!huh.load()) {
-                g_lua_log->add(LogEntry::ERROR, static_cast<sol::error>(result).what());
-                LOGE("[Lua] Failed to execute script (code: %d)", result.status());
+        std::future<void> future = std::async(std::launch::async, [lua_api, script, is_file]() {
+            if (is_file) {
+                auto result = lua_api->get_sol_state()->script_file(script, sol::script_pass_on_error);
+                if (!result.valid()) {
+                    if (!g_stop_script.load()) {
+                        g_lua_log->add(LogEntry::ERROR, static_cast<sol::error>(result).what());
+                        LOGE("[Lua] Failed to execute script file: %s (code: %d)", script, result.status());
+                    }
+                }
             }
+            else {
+                auto result = lua_api->get_sol_state()->script(script, sol::script_pass_on_error);
+                if (!result.valid()) {
+                    if (!g_stop_script.load()) {
+                        g_lua_log->add(LogEntry::ERROR, static_cast<sol::error>(result).what());
+                        LOGE("[Lua] Failed to execute script (code: %d)", result.status());
+                    }
+                }
+            }
+
+            g_script_running.store(false);
+        });
+
+        while (g_script_running) {
+            if (g_stop_script) {
+                break;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
 
-        hah.store(false);
-        huh.store(false);
+        g_script_running.store(false);
     }
 
     void LuaApi::execute(const char *script, bool is_file) {
-        if (hah.load()) {
+        if (g_script_running.load()) {
             g_lua_log->add(LogEntry::WARNING, "Stop previous script before executing new one.");
             return;
         }
 
-        m_sol_state->set("AmEY9hS0d5SUezKolklC", 0);
+        g_script_running.store(true);
+        g_stop_script.store(false);
 
-        hah.store(true);
+        m_sol_state->set("AmEY9hS0d5SUezKolklC", 0);
 
         std::thread lua_thread(lua_execution_thread, this, script, is_file);
         lua_thread.detach();
@@ -115,8 +139,8 @@ namespace api {
     }
 
     void LuaApi::stop() {
-        if (hah.load()) {
-            huh.store(true);
+        if (g_script_running.load()) {
+            g_stop_script.store(true);
             m_sol_state->script("d8bOfUnrRn5K4H2Fq8qn()", sol::script_pass_on_error);
         }
     }

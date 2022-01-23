@@ -265,6 +265,7 @@ namespace KittyMemory {
             for (size_t i = 0; i <= end - start; i++) {
                 if (compareData(reinterpret_cast<char *>(start + i), pattern)) {
                     ret = Type(start + i + offset);
+                    break;
                 }
             }
         }
