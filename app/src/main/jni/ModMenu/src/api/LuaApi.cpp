@@ -29,7 +29,7 @@ namespace api {
             end)");
 
         m_sol_state->set_function("sleep", [this](const int &time) {
-            m_sol_state->script("os.execute(\"sleep 1\")");
+            m_sol_state->script(utilities::utils::string_format("os.execute(\"sleep %d\")", time));
         });
 
         m_sol_state->set_function("print", [](const std::string &str) {
@@ -50,7 +50,7 @@ namespace api {
             print(utilities::utils::string_format("Data: %s", KittyMemory::read2HexStr(reinterpret_cast<void *>(address), len).c_str()));
         });
 
-        m_sol_state->set_function("memWrite", [](const uintptr_t &address, const std::string &hex, const int &len) {
+        m_sol_state->set_function("memWrite", [print](const uintptr_t &address, const std::string &hex, const int &len) {
             std::vector<uint8_t> code;
             code.resize(len);
 
@@ -58,6 +58,7 @@ namespace api {
             LOGD("[Lua] Writing %d bytes to 0x%x", code.size(), address);
             if (KittyMemory::memWrite(reinterpret_cast<void *>(address), &code[0], len) != KittyMemory::SUCCESS) {
                 LOGE("[Lua] Failed to write memory");
+                print("Failed to write memory");
             }
         });
 
@@ -109,7 +110,7 @@ namespace api {
                 break;
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
         g_script_running.store(false);
