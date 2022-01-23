@@ -7,6 +7,7 @@ Documentation for lua api used to make own cheat.
 
 ## 📜 Functions
 
+### 📃 Memory
 Read memory.
 
 Paramenters:
@@ -34,9 +35,27 @@ Paramenters:
 - pattern: a pattern to search
 - offset: offset to add to the final address
 ```lua
-patternScan(address, len);
+patternScan(pattern, offset);
 ```
 
+Get address by symbol.
+
+Paramenters:
+- symbol: a symbol to search
+```lua
+getAddressFromSymbol(address);
+```
+
+Compare a address with given pattern.
+
+Paramenters:
+- address: a address to compare with pattern
+- pattern: a pattern to search
+```lua
+compareData(address, pattern);
+```
+
+### 📃 Growtopia
 To print message to console.
 
 Paramenters:
