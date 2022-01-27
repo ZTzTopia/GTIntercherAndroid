@@ -12,7 +12,9 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
+import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -41,12 +43,15 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -1040,7 +1045,14 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             if (!inFloatingMode && !aleardyAtHome) {
                 Rect rect = new Rect();
                 getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
-                m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
+                // m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
+
+                // If the navigation gesture is enabled it will be at the bottom or
+                // if dpi >= 600 makes the navigation bar (not navigation gesture) down.
+                // So this fix the text input problem?
+                DisplayMetrics metrics = getResources().getDisplayMetrics();
+                m_KeyBoardHeight = metrics.heightPixels - rect.bottom;
+
                 if (m_KeyBoardHeight > 0 && !m_editText.isFocused()) {
                     showEditTextBox(true);
                 }
