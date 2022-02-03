@@ -5,8 +5,6 @@ import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
 
-import com.gt.launcher.FloatingService;
-
 class AppGLSurfaceView extends GLSurfaceView {
     boolean rendererSet;
 
@@ -70,8 +68,6 @@ class AppGLSurfaceView extends GLSurfaceView {
         if (app.is_demo) {
             app.showDialog(0);
         }
-
-        FloatingService.updateViewLayout(motionEvent);
 
         if (mMultiTouchClassAvailable) {
             return WrapSharedMultiTouchInput.OnInput(motionEvent);

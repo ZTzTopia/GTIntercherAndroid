@@ -67,7 +67,6 @@ import com.android.vending.licensing.LicenseChecker;
 import com.android.vending.licensing.LicenseCheckerCallback;
 import com.android.vending.licensing.ServerManagedPolicy;
 import com.anzu.sdk.Anzu;
-import com.gt.launcher.FloatingService;
 import com.gt.launcher.R;
 import com.tapjoy.TJActionRequest;
 import com.tapjoy.TJConnectListener;
@@ -405,7 +404,6 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     }
 
     public boolean inFloatingMode = false;
-    public boolean aleardyAtHome = false;
 
     protected synchronized void onPause() {
         Log.d(PackageName, "onPause...");
@@ -437,22 +435,12 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     protected synchronized void onResume() {
         music_set_volume(m_lastMusicVol);
 
-        if (!inFloatingMode && !aleardyAtHome) {
+        if (!inFloatingMode && !com.gt.launcher.Main.isNotInApp()) {
             mGLView.onResume();
         }
 
         setup_accel(accelHzSave);
-
         super.onResume();
-
-        if (inFloatingMode && aleardyAtHome) {
-            SharedActivity.app.aleardyAtHome = false;
-            FloatingService.mFloatingService.showFloatingWindow(false);
-        }
-
-        if (!inFloatingMode && aleardyAtHome) {
-            SharedActivity.app.aleardyAtHome = false;
-        }
     }
 
     public final Runnable mUpdateMainThread = () -> {
@@ -1036,7 +1024,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     private void RegisterLayoutChangeCallback() {
         mViewGroup.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-            if (!inFloatingMode && !aleardyAtHome) {
+            if (!inFloatingMode && !com.gt.launcher.Main.isNotInApp()) {
                 Rect rect = new Rect();
                 getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
                 // m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
@@ -1129,7 +1117,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     }
 
     public void toggle_keyboard(boolean show) {
-        if (inFloatingMode && aleardyAtHome) {
+        if (inFloatingMode && com.gt.launcher.Main.isNotInApp()) {
             showEditTextBox(show);
         }
 
@@ -2120,19 +2108,6 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         intent.putExtra("environment", environment);
         intent.putExtra("misc", misc);
         app.startActivity(intent);
-    }
-
-    public String getExtractedLibraryPath() {
-        String extractedPath = getExternalFilesDir(null).getAbsolutePath() + "/extracted";
-        String libPath = extractedPath + "/lib";
-        String[] libAbi = { "armeabi-v7a", "arm64-v8a" };
-        for (String abi : libAbi) {
-            File libAbiPath = new File(libPath + "/" + abi);
-            if (libAbiPath.exists()) {
-                return libAbiPath.getAbsolutePath();
-            }
-        }
-        return "";
     }
 
     public GLSurfaceView mGLView;
