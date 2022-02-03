@@ -1,0 +1,35 @@
+name: Debug Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+        
+      - name: Build APK
+        shell: bash
+        run: |
+          exit_on_error() { 
+            echo "$1"; 
+            exit 1; 
+          }
+          
+          echo "Setting vars"
+          APK_DIR_PATH="./app/build/outputs/apk/debug"
+          
+          if ! ./gradlew assembleDebug; then
+            exit_on_error "Build failed."
+          fi
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-debug.apk
+          path: ${{ env.APK_DIR_PATH }}/app-debug.apk
