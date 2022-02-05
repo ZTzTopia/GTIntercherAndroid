@@ -7,7 +7,7 @@ def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
 def useVersion = System.getenv("GTIANDROID_USE_VERSION") ?: ""
 
 def version = "0.0.3"
-def versionDisplayName = "${version}${ciBuild ? " (${ciRunNumber})" : useVersion ?: " Dev"}"
+def versionDisplayName = "v${version}${ciBuild ? " (#${ciRunNumber})" : useVersion ?: " Dev"}"
 
 android {
     compileSdk 31
@@ -93,6 +93,7 @@ dependencies {
     implementation 'net.lingala.zip4j:zip4j:2.9.1'
 
     // Needed by Growtopia
+    implementation 'com.tapjoy:tapjoy-android-sdk:12.9.0'
     implementation 'org.jbundle.util.osgi.wrapped:org.jbundle.util.osgi.wrapped.org.apache.http.client:4.1.2'
     // implementation 'com.appsflyer:af-android-sdk:6.4.3'
     implementation 'com.android.billingclient:billing:4.0.0'

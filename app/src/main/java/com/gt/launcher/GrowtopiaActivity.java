@@ -3,6 +3,7 @@ package com.gt.launcher;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -30,7 +31,7 @@ public class GrowtopiaActivity extends SharedActivity {
             }
             catch (UnsatisfiedLinkError e) {
                 e.printStackTrace();
-                makeToastUI("Failed to load native library");
+                Toast.makeText(this, "Failed to load native library", Toast.LENGTH_SHORT).show();
             }
 
             super.onCreate(savedInstanceState);

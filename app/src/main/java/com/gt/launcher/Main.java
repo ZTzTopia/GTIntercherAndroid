@@ -11,6 +11,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.gt.launcher.utils.CrashHandler;
 import com.gt.launcher.utils.NativeUtils;
 
 import net.lingala.zip4j.ZipFile;
@@ -35,6 +36,8 @@ public class Main {
     }
 
     public static void start(Context context) throws Throwable {
+        CrashHandler.init(context, true);
+
         ApplicationInfo applicationInfo = context.getPackageManager().getApplicationInfo("com.rtsoft.growtopia", 0);
 
         String libraryPath = applicationInfo.nativeLibraryDir;
