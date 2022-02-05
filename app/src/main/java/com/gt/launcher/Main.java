@@ -50,6 +50,9 @@ public class Main {
 
         // Start floating window service.
         checkOverlayPermission(context);
+
+        // Set version display name to mod menu.
+        nativeSetVersionDisplayName(BuildConfig.VERSION_DISPLAY_NAME);
     }
 
     private static String getExtractedNativeLibraryPath(Context context) {
@@ -146,4 +149,6 @@ public class Main {
         ActivityManager.getMyMemoryState(runningAppProcessInfo);
         return runningAppProcessInfo.importance != 100;
     }
+
+    static native void nativeSetVersionDisplayName(String versionDisplayName);
 }

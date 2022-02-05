@@ -24,9 +24,8 @@ jobs:
             exit 1; 
           }
           
-          echo "Setting vars"
+          echo "Setting vars.."
           APK_DIR_PATH="./app/build/outputs/apk/debug"
-          
           echo "APK_DIR_PATH=$APK_DIR_PATH" >> $GITHUB_ENV
           
           echo "Building APK.."
@@ -37,5 +36,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: app-debug.apk
-          path: ${{ env.APK_DIR_PATH }}/app-debug.apk
+          name: ${{ github.sha }}
+          path: ${{ env.APK_DIR_PATH }}

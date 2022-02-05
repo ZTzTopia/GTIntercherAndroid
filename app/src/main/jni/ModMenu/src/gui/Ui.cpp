@@ -7,6 +7,7 @@
 #include "game/Hook.h"
 #include "include/KittyMemory/MemoryPatch.h"
 #include "font/IconsFontAwesome5.h"
+#include "utilities/JavaWrapper.h"
 
 namespace gui {
     namespace ui {
@@ -29,7 +30,7 @@ namespace gui {
             ImGui::Text("GTInternal");
             ImGui::PopFont();
             ImGui::SameLine();
-            ImGui::TextColored(ImColor(117, 119, 123, 255), "v0.0.3");
+            ImGui::TextColored(ImColor(117, 119, 123, 255), g_version_display_name_string.c_str());
 
             utils::BeginTab("##ModMenuTab", 3, false, ImVec2(0.0f, ImGui::CalcTextSize("ABC").x));
 
