@@ -21,7 +21,9 @@ void BaseApp_Draw_hook(void *thiz) {
         g_game = new game::Game{};
         g_game->init();
 
-        g_ui = new ui::UI{ {1600, 900} };
+        auto width = KittyMemory::callFunction<float>(GTS("_Z15GetScreenSizeXfv"));
+        auto height = KittyMemory::callFunction<float>(GTS("_Z15GetScreenSizeYfv"));
+        g_ui = new ui::UI{ ImVec2(width, height) };
         g_ui->initialize();
 
         initialized = true;
