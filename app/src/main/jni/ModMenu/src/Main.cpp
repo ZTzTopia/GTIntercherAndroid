@@ -1,19 +1,3 @@
-/*
- *
- * DEVELOPER: ZTz
- * PROJECT: GTInternalAndroid
- * VERSION: 0.3
- *
- * ============================================================================
- *
- * Features:
- * Many useful cheats.
- * Debug enet client packet.
- * Multi bot.
- * And many useful features.
- *
- */
-
 #include <android/log.h>
 #include <dlfcn.h>
 #include <pthread.h>
@@ -27,7 +11,6 @@
 JavaVM *g_java_vm{ nullptr };
 void *g_growtopia_handle{ nullptr };
 KittyMemory::ProcMap g_growtopia_map{};
-api::LuaApi *g_lua_api{ nullptr };
 
 void *main_thread(void *) {
     utilities::crash_dump::init();
@@ -44,7 +27,6 @@ void *main_thread(void *) {
         sleep(1);
     } while (g_growtopia_handle == nullptr);
 
-    g_lua_api = new api::LuaApi{};
     game::hook::init();
 
     // Now we can exit the thread.

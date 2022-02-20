@@ -2,16 +2,14 @@
 #include <dlfcn.h>
 #include <enet/enet.h>
 
-#include <utility>
-
 #include "Hook.h"
+#include "include/Dobby/dobby.h"
 #include "packet/TextParse.h"
 #include "packet/Decoder.h"
 #include "utilities/Macros.h"
-#include "../include/Dobby/dobby.h"
 
-gui::Gui *g_gui{ nullptr };
 game::Game *g_game{ nullptr };
+ui::UI *g_ui{ nullptr };
 enet_uint16 g_port{ 65535 };
 
 void (*BaseApp_Draw)(void *thiz);
@@ -23,15 +21,17 @@ void BaseApp_Draw_hook(void *thiz) {
         g_game = new game::Game{};
         g_game->init();
 
-        g_gui = new gui::Gui{};
-        g_gui->init();
+        g_ui = new ui::UI{ {1600, 900} };
+        g_ui->initialize();
 
         initialized = true;
     }
     else {
-        if (g_gui) {
-            g_gui->Render();
+        if (g_ui) {
+            g_ui->render();
         }
+
+        ui::UI::handle_input();
     }
 }
 
@@ -49,8 +49,8 @@ void (*AppOnTouch)(void *a1, void *a2, int type, float x, float y, bool multi);
 void AppOnTouch_hook(void *a1, void *a2, int type, float x, float y, bool multi) {
     ImGuiIO& io = ImGui::GetIO();
 
-    if (g_gui && (x > 0.0 || y > 0.0)) {
-        g_gui->OnTouchEvent(type, multi, x, y);
+    if (g_ui && (x > 0.0 || y > 0.0)) {
+        g_ui->on_touch(type, multi, x, y);
     }
 
     if (!&io || !io.WantCaptureMouse) {
@@ -64,17 +64,10 @@ void AppOnTouch_hook(void *a1, void *a2, int type, float x, float y, bool multi)
 void (*AppOnKey)(void *, void *, int, int, int);
 void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
     ImGuiContext& g = *GImGui;
-    ImGuiIO &io = ImGui::GetIO();
 
     // Make sure if keyboard is not opened because of imgui, we don't handle it.
     if (g.ActiveId == 0) {
         return AppOnKey(a1, a2, type, keycode, c);
-    }
-
-    // We need to wait until next two frame to handle key event.
-    // So the text not blinks.
-    if (g_gui->m_wait_until_next_frame < 2) {
-        return;
     }
 
     switch (keycode) {
@@ -90,8 +83,7 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
             break;
     }
 
-    // LOGD("Keycode: %d, Char: %d", keycode, c);
-
+    ImGuiIO &io = ImGui::GetIO();
     ImGuiInputTextState *state = ImGui::GetInputTextState(g.ActiveId);
     if (type == 1) {
         switch (c) {
@@ -103,7 +95,6 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
                     state->ClearText();
                 }
 
-                // Fix blink? Yes.
                 io.InputQueueCharacters.clear();
                 break;
             }

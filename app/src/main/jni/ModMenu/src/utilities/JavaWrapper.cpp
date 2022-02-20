@@ -6,7 +6,7 @@
 
 namespace utilities {
     namespace java_wrapper {
-        void show_soft_keyboard_input(bool show, const char *default_text, bool password, int max_length) {
+        void show_soft_input(bool show, const char *default_text, bool password, int max_length) {
             JNIEnv *env{};
             g_java_vm->GetEnv((void**)&env, JNI_VERSION_1_6);
             jclass java_class = env->FindClass("com/gt/launcher/GrowtopiaActivity");

@@ -8,7 +8,7 @@ GTIntercherAndroid is GTInternalAndroid + GTLauncherAndroid. (After GTIntercherA
 ## 📜 Features
 - Launch growtopia without having to update the launcher if the game is updated.
 - Floating Windows.
-- Lua executor. [Lua Api Documentations](https://github.com/ZTzTopia/GTIntercherAndroid/blob/master/LUAAPIDOCS.md)
+- Lua executor. [Lua Api Documentations](https://github.com/ZTzTopia/GTIntercherAndroid/wiki)
 
 ## 😋 Coming Soon
 - Multi bot.

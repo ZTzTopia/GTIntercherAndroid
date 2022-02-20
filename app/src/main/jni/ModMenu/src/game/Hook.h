@@ -3,10 +3,10 @@
 
 #include "Common.h"
 #include "Game.h"
-#include "gui/Gui.h"
+#include "ui/UI.h"
 
-extern gui::Gui *g_gui;
 extern game::Game *g_game;
+extern ui::UI *g_ui;
 extern enet_uint16 g_port;
 
 namespace game {
