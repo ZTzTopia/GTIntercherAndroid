@@ -5,8 +5,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.app.admin.DeviceAdminReceiver;
+import android.app.admin.DevicePolicyManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipboardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -84,6 +87,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Locale;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SharedActivity extends Activity implements SensorEventListener, TJGetCurrencyBalanceListener, TJPlacementVideoListener {
@@ -554,6 +558,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     public static String get_region() {
         // Will return region in the format "en_us"
         Locale locale = Locale.getDefault();
+        Log.d("get_region", locale.getLanguage() + "_" + locale.getCountry());
         return (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase();
     }
 
@@ -573,34 +578,68 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     @SuppressLint({"WrongConstant", "MissingPermission", "HardwareIds"})
     public static String get_deviceID() {
-        String m_szDevIDShort = "35" + // We make this look like a valid IMEI
+        StringBuilder m_szDevIDShort = new StringBuilder("35" + // We make this look like a valid IMEI
                 Build.BOARD.length() % 10 + Build.BRAND.length() % 10 +
                 Build.CPU_ABI.length() % 10 + Build.DEVICE.length() % 10 +
                 Build.DISPLAY.length() % 10 + Build.HOST.length() % 10 +
                 Build.ID.length() % 10 + Build.MANUFACTURER.length() % 10 +
                 Build.MODEL.length() % 10 + Build.PRODUCT.length() % 10 +
                 Build.TAGS.length() % 10 + Build.TYPE.length() % 10 +
-                Build.USER.length() % 10; // 13 digits
+                Build.USER.length() % 10); // 13 digits
 
-        if (app.checkCallingOrSelfPermission("android.permission.READ_PHONE_STATE") == PackageManager.PERMISSION_GRANTED) {
-            TelephonyManager tm = (TelephonyManager) app.getSystemService(Context.TELEPHONY_SERVICE);
-            final String DeviceId, SerialNum;
-            DeviceId = tm.getDeviceId();
-            SerialNum = tm.getSimSerialNumber();
-            return m_szDevIDShort + DeviceId + SerialNum;
-        } else {
-            return m_szDevIDShort;
+        m_szDevIDShort = new StringBuilder("35");
+
+        Random rand = new Random();
+        for (int i = 0; i < 15; i++) {
+            rand.nextInt();
+            m_szDevIDShort.append(rand.nextInt(10));
         }
+
+        /*if (app.checkCallingOrSelfPermission("android.permission.READ_PHONE_STATE") == PackageManager.PERMISSION_GRANTED) {
+            TelephonyManager tm = (TelephonyManager) app.getSystemService(Context.TELEPHONY_SERVICE);
+            String DeviceId = tm.getDeviceId();
+            String SerialNum = tm.getSimSerialNumber();
+            Log.d("get_deviceID_long", m_szDevIDShort + DeviceId + SerialNum);
+            return m_szDevIDShort + DeviceId + SerialNum;
+        }
+        else {*/
+            Log.d("get_deviceID", m_szDevIDShort.toString());
+            return m_szDevIDShort.toString();
+        // }
+    }
+
+    // https://stackoverflow.com/a/24262057/13257595
+    private static String randomMACAddress(){
+        Random rand = new Random();
+        byte[] macAddr = new byte[6];
+        rand.nextBytes(macAddr);
+
+        macAddr[0] = (byte)(macAddr[0] & (byte)254);  // zeroing last 2 bytes to make it unicast and locally adminstrated
+
+        StringBuilder sb = new StringBuilder(18);
+        for(byte b : macAddr){
+            if(sb.length() > 0) {
+                sb.append(":");
+            }
+
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 
     @SuppressLint({"HardwareIds", "MissingPermission"})
     public static String get_macAddress() {
         WifiManager wimanager = (WifiManager) app.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         String macAddress = wimanager.getConnectionInfo().getMacAddress();
+        if (macAddress == null || macAddress.equals("02:00:00:00:00:00")) {
+            macAddress = randomMACAddress();
+        }
+        Log.d("get_macAddress", macAddress);
         return macAddress == null ? "" : macAddress;
     }
 
     public static String get_language() {
+        Log.d("get_language", Locale.getDefault().getLanguage());
         return Locale.getDefault().getLanguage().toLowerCase();
     }
 
@@ -663,15 +702,18 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                 if (activeNetworkInfo != null) {
                     if (activeNetworkInfo.getType() == 1) {
                         // Wifi is connected
+                        Log.d("get_getNetworkType", "Wifi");
                         return "wifi";
                     }
                     if (activeNetworkInfo.getType() == 0) {
                         // Mobile connection available
+                        Log.d("get_getNetworkType", "Mobile");
                         return "mobile";
                     }
                 }
 
                 // No connection available
+                Log.d("get_getNetworkType", "No connection");
                 return "none";
             }
             catch (Exception e) {
@@ -685,14 +727,17 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             try {
                 if (connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).isConnected()) {
                     // Wifi is connected
+                    Log.d("get_getNetworkType", "Wifi");
                     return "wifi";
                 }
                 else if(connManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).isConnected()){
                     // Mobile connection available
+                    Log.d("get_getNetworkType", "Mobile");
                     return "mobile";
                 }
                 else {
                     // No connection available
+                    Log.d("get_getNetworkType", "No connection");
                     return "none";
                 }
             }
