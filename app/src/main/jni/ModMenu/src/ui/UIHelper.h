@@ -7,7 +7,8 @@
 namespace ui {
     class UIHelper {
     public:
-        static uint8_t create_title_bar(std::string title, bool close_button = true);
+        // -2 = close, -1 = collapsed, 0 = error, 1 = success
+        static int begin_window(ImRect rect, const char* title, bool show_close_button = true, ImGuiWindowFlags flags = 0);
 
         static bool button(const char *label, ImVec2 size = ImVec2());
 

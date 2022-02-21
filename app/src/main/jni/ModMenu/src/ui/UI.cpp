@@ -1,6 +1,7 @@
 #pragma once
 #include "UI.h"
 #include "font/IconsMaterialDesign.h"
+#include "ui/LuaLogUI.h"
 #include "ui/ModMenuUI.h"
 #include "utilities/JavaWrapper.h"
 #include "utilities/Macros.h"
@@ -23,7 +24,8 @@ namespace ui {
 
         GUIManager::initialize();
 
-        m_views.push_back(new ModMenuUI(ImRect(32, 32, 600, 400), "ModMenu"));
+        m_views.push_back(new ModMenuUI(ImRect(64, 64, get_display_size().x / 2.0f, get_display_size().y / 1.5f), "ModMenu"));
+        m_views.push_back(new LuaLogUI(ImRect(64, 64, get_display_size().x / 2.5f, get_display_size().y / 2.0f), "LuaLog", false));
     }
 
     void UI::render() {

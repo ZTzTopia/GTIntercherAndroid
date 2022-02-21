@@ -3,41 +3,73 @@
 #include "game/Hook.h"
 
 namespace ui {
-    // Close = -1, Expand = 0, Collapse = 1
-    uint8_t UIHelper::create_title_bar(std::string title, bool close_button) {
-        uint8_t ret{ 0 };
+    struct WindowData {
+        ImGuiID m_id;
+        bool m_collapsed;
+    };
 
-        ImGuiStyle &style = ImGui::GetStyle();
-        ImVec2 p = ImGui::GetCursorScreenPos();
-        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(p.x, p.y), ImVec2(p.x + ImGui::GetWindowWidth(), p.y + ImGui::GetCursorPosY() + 19 + ImGui::GetFontSize() * 1.5f), ImColor(47, 54, 64, 255), 8.0f);
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 19);
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 19);
-        ImGui::PushFont(g_ui->get_bold_font());
-        ImGui::Text(title.c_str());
-        ImGui::PopFont();
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize("M").x * (close_button ? 2.5f : 1.5f) - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-        if (UIHelper::m_title_collapsed[ImGui::GetCurrentWindow()->ID]) {
-            if (UIHelper::button(ICON_MD_EXPAND_LESS)) {
-                UIHelper::m_title_collapsed[ImGui::GetCurrentWindow()->ID] = false;
-            }
+    static std::vector<WindowData *> g_window_data;
 
-            ret = 1;
+    int UIHelper::begin_window(ImRect rect, const char *title, bool show_close_button, ImGuiWindowFlags flags) {
+        ImGuiID id = ImGui::GetID(title);
+        auto it = std::find_if(g_window_data.begin(), g_window_data.end(), [&](WindowData *data) {
+            return data->m_id == id;
+        });
+
+        if (it == g_window_data.end()) {
+            g_window_data.push_back(new WindowData{
+                id,
+                false
+            });
+            it = g_window_data.end() - 1;
         }
-        else {
-            if (UIHelper::button(ICON_MD_EXPAND_MORE)) {
-                UIHelper::m_title_collapsed[ImGui::GetCurrentWindow()->ID] = true;
-            }
-        }
-        if (close_button) {
+
+        auto window_data = *it;
+
+        ImGui::SetNextWindowPos(ImVec2(rect.Min.x, rect.Min.y), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(rect.Max.x, window_data->m_collapsed ? ImGui::GetFontSize() * 2.0f : rect.Max.y));
+
+        bool ret = ImGui::Begin(title, nullptr, flags | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+        if (ret) {
+            ImGuiStyle &style = ImGui::GetStyle();
+            ImVec2 pos = ImGui::GetCursorScreenPos();
+
+            ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x, pos.y), ImVec2(pos.x + ImGui::GetWindowWidth(), pos.y + ImGui::GetFontSize() * 2.0f), ImColor(47, 54, 64, 255), 8.0f);
+
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetFontSize() / 2.0f);
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetFontSize() / 2.0f);
+
+            ImGui::PushFont(g_ui->get_bold_font());
+            ImGui::Text(title);
+            ImGui::PopFont();
+
             ImGui::SameLine();
-            if (UIHelper::button(ICON_MD_CLOSE)) {
-                ret = -1;
+
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize("M").x * (show_close_button ? 3.15f : 1.15f) - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+            if (window_data->m_collapsed) {
+                if (UIHelper::button(ICON_MD_EXPAND_LESS, ImVec2(ImGui::GetFontSize(), ImGui::GetFontSize()))) {
+                    window_data->m_collapsed = false;
+                }
             }
+            else {
+                if (UIHelper::button(ICON_MD_EXPAND_MORE, ImVec2(ImGui::GetFontSize(), ImGui::GetFontSize()))) {
+                    window_data->m_collapsed = true;
+                }
+            }
+            if (show_close_button) {
+                ImGui::SameLine();
+                if (UIHelper::button(ICON_MD_CLOSE, ImVec2(ImGui::GetFontSize(), ImGui::GetFontSize()))) {
+                    ret = -1;
+                }
+            }
+            ImGui::PopStyleVar();
         }
-        ImGui::PopStyleVar();
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 19);
+
+        if (window_data->m_collapsed) {
+            return -2;
+        }
+
         return ret;
     }
 
@@ -49,6 +81,4 @@ namespace ui {
         ImGui::PopStyleVar();
         return ret;
     }
-
-    std::unordered_map<ImGuiID, bool> UIHelper::m_title_collapsed;
 }

@@ -5,7 +5,7 @@
 namespace ui {
     class ModMenuUI : public UIView {
     public:
-        ModMenuUI(ImRect rect, std::string name, bool visible = true);
+        ModMenuUI(ImRect rect, const std::string &name, bool visible = true);
         ~ModMenuUI() = default;
 
         void draw();

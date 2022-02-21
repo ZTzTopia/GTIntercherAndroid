@@ -71,12 +71,14 @@ namespace ui {
 
         style.ScrollbarSize = scale_y(35.0f);
 
-        style.FramePadding = ImVec2(scale_x(38.0f), 0.0f);
+        style.FramePadding = ImVec2(scale_x(38.0f), scale_y(0.0f));
 
         style.FrameBorderSize = 0.0f;
         style.ChildBorderSize = 1.0f;
 
         style.ItemSpacing = ImVec2(scale_x(12.0f), scale_y(12.0f));
+
+        style.TabRounding = 0.0f;
 
         // Colors
         style.Colors[ImGuiCol_WindowBg] = ImVec4(53.0f / 255.0f, 59.0f / 255.0f, 72.0f / 255.0f, 1.0f);
@@ -93,6 +95,12 @@ namespace ui {
         style.Colors[ImGuiCol_Button] = ImVec4(45.0f / 255.0f, 49.0f / 255.0f, 58.0f / 255.0f, 1.0f);
         style.Colors[ImGuiCol_ButtonHovered] = ImVec4(156.0f / 255.0f, 136.0f / 255.0f, 255.0f / 255.0f, 1.0f);
         style.Colors[ImGuiCol_ButtonActive] = ImVec4(156.0f / 255.0f, 136.0f / 255.0f, 255.0f / 255.0f, 1.0f);
+
+        style.Colors[ImGuiCol_Tab] = ImVec4(47.0f / 255.0f, 54.0f / 255.0f, 64.0f / 255.0f, 1.0f);
+        style.Colors[ImGuiCol_TabHovered] = ImVec4(47.0f / 255.0f, 54.0f / 255.0f, 64.0f / 255.0f, 1.0f);
+        style.Colors[ImGuiCol_TabActive] = ImVec4(47.0f / 255.0f, 54.0f / 255.0f, 64.0f / 255.0f, 1.0f);
+        style.Colors[ImGuiCol_TabUnfocused] = ImVec4();
+        style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4();
 
         style.Colors[ImGuiCol_Border] = ImVec4(156.0f / 255.0f, 136.0f / 255.0f, 255.0f / 255.0f, 1.0f);
         style.Colors[ImGuiCol_CheckMark] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);

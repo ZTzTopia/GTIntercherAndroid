@@ -13,6 +13,8 @@ namespace ui {
         virtual void initialize();
         virtual void render();
 
+        ImVec2 get_display_size() { return m_display_size; }
+
         float scale_x(float x) { return x * m_display_scale.x; }
         float scale_y(float y) { return y * m_display_scale.y; }
 

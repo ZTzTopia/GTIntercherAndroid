@@ -1,38 +1,78 @@
 #include "ModMenuUI.h"
+#include "ui/font/IconsMaterialDesign.h"
 #include "ui/UIHelper.h"
 #include "game/Hook.h"
 #include "include/KittyMemory/MemoryPatch.h"
 
 namespace ui {
-    ModMenuUI::ModMenuUI(ImRect rect, std::string name, bool visible)
-        : UIView(rect, std::move(name), visible) {}
+    ModMenuUI::ModMenuUI(ImRect rect, const std::string &name, bool visible)
+        : UIView(rect, name, visible) {}
 
     void ModMenuUI::draw() {
-        static bool collapsed{ false };
+        ImGuiStyle &style = ImGui::GetStyle();
 
-        ImGui::SetNextWindowPos(ImVec2(get_rect().Min.x, get_rect().Min.y), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(get_rect().Max.x, collapsed ? 19 + ImGui::GetFontSize() * 1.5f : get_rect().Max.y));
+        if (UIHelper::begin_window(get_rect(), get_name().c_str(), false) == 1) {
+            if (ImGui::BeginTabBar("##TopTabBar")) {
+                ImVec2 pos = ImGui::GetCursorScreenPos();
+                ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x, pos.y - 48), ImVec2(pos.x + ImGui::GetWindowSize().x, pos.y), ImColor(47, 54, 64, 255));
+                if (ImGui::BeginTabItem(ICON_MD_ROCKET" Cheats")) {
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetFontSize() / 2.0f);
 
-        ImGui::Begin((get_name() + "##ModMenu").c_str(), nullptr, ImGuiWindowFlags_NoDecoration);
-        {
-            uint8_t ret = UIHelper::create_title_bar(get_name(), false);
-            if (ret == -1) {
-                ImGui::End();
-                return;
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
+                    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_ui->scale_x(8.0f));
+                    if (ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.78f), false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
+                        ImGui::PushFont(g_ui->get_bold_font());
+                        ImGui::Text("Cheats");
+                        ImGui::PopFont();
+
+                        MemoryPatch memory_patch{};
+                        for (auto& cheat_list : g_game->m_cheat_list) {
+                            if (ImGui::Checkbox(cheat_list.name.c_str(), &cheat_list.state)) {
+                                if (cheat_list.active != nullptr) {
+                                    cheat_list.active();
+                                }
+                            }
+                            else {
+                                if (cheat_list.deactive != nullptr) {
+                                    cheat_list.deactive();
+                                }
+                            }
+
+                            if (cheat_list.old_state != cheat_list.state) {
+                                if (!cheat_list.memory_patch_list.empty()) {
+                                    for (auto& memory_patch2 : cheat_list.memory_patch_list) {
+                                        cheat_list.state ? memory_patch2.Modify() : memory_patch2.Restore();
+                                    }
+                                }
+
+                                cheat_list.old_state = cheat_list.state;
+                            }
+                        }
+                    }
+
+                    ImGui::EndChild();
+                    ImGui::PopStyleVar(2);
+
+                    ImGui::EndTabItem();
+                }
+
+                if (ImGui::BeginTabItem(ICON_MD_CODE" Executor")) {
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetFontSize() / 2.0f);
+
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
+                    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_ui->scale_x(8.0f));
+                    if (ImGui::BeginChild("##ExecutorChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.78f), false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
+                        ImGui::PushFont(g_ui->get_bold_font());
+                        ImGui::Text("Executor");
+                        ImGui::PopFont();
+                    }
+
+                    ImGui::EndChild();
+                    ImGui::PopStyleVar(2);
+                    ImGui::EndTabItem();
+                }
             }
-            else if (ret == 0) {
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImGui::GetStyle().FramePadding);
-                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_ui->scale_x(8.0f));
-                ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.71f), false, ImGuiWindowFlags_AlwaysUseWindowPadding);
-
-                static char search_text_[128];
-                ImGui::InputText("Search", search_text_, 128, ImGuiInputTextFlags_Password);
-
-                ImGui::EndChild();
-                ImGui::PopStyleVar(2);
-            }
-
-            collapsed = ret == 1;
+            ImGui::EndTabBar();
         }
         ImGui::End();
     }
