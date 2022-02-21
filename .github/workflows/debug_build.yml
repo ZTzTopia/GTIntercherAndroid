@@ -23,8 +23,17 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
+            .gradle
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
           restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Restore Build cache
+        uses: actions/cache@v2.1.4
+        with:
+          path: |
+            app/build
+          key: ${{ runner.os }}-build-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-build-
 
       - name: Build debug APK
         shell: bash
