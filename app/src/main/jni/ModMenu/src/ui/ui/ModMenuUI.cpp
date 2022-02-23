@@ -1,3 +1,5 @@
+#include <array>
+
 #include "ModMenuUI.h"
 #include "ui/font/IconsMaterialDesign.h"
 #include "ui/UIHelper.h"
@@ -20,7 +22,7 @@ namespace ui {
 
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
                     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_ui->scale_x(8.0f));
-                    if (ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.78f), false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
+                    if (ImGui::BeginChild("##CheatChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y - (ImGui::GetCursorPosY() + ImGui::GetFontSize() / 2.0f)), false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
                         ImGui::PushFont(g_ui->get_bold_font());
                         ImGui::Text("Cheats");
                         ImGui::PopFont();
@@ -49,7 +51,6 @@ namespace ui {
                             }
                         }
                     }
-
                     ImGui::EndChild();
                     ImGui::PopStyleVar(2);
 
@@ -61,14 +62,33 @@ namespace ui {
 
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
                     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_ui->scale_x(8.0f));
-                    if (ImGui::BeginChild("##ExecutorChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * 0.78f), false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
+                    if (ImGui::BeginChild("##ExecutorChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * (ImGui::GetCursorPosY() + ImGui::GetFontSize() / 2.0f)), false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
                         ImGui::PushFont(g_ui->get_bold_font());
                         ImGui::Text("Executor");
                         ImGui::PopFont();
                     }
-
                     ImGui::EndChild();
                     ImGui::PopStyleVar(2);
+
+                    ImGui::EndTabItem();
+                }
+
+                if (ImGui::BeginTabItem(ICON_MD_MISCELLANEOUS_SERVICES" Misc")) {
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetFontSize() / 2.0f);
+
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, style.FramePadding);
+                    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, g_ui->scale_x(8.0f));
+                    if (ImGui::BeginChild("##MiscChild", ImVec2(ImGui::GetWindowSize().x, ImGui::GetWindowSize().y * (ImGui::GetCursorPosY() + ImGui::GetFontSize() / 2.0f)), false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
+                        ImGui::PushFont(g_ui->get_bold_font());
+                        ImGui::Text("Miscellaneous");
+                        ImGui::PopFont();
+
+                        static std::string player_when_join[4]{ "None", "Pull", "Kick", "Ban" };
+                        ImGui::SliderInt("Player when join", &g_game->m_player_when_join, 0, 3, player_when_join[g_game->m_player_when_join].c_str());
+                    }
+                    ImGui::EndChild();
+                    ImGui::PopStyleVar(2);
+
                     ImGui::EndTabItem();
                 }
             }

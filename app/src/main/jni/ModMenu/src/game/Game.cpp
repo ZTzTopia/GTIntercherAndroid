@@ -5,7 +5,11 @@
 
 namespace game {
     Game::Game()
-        : m_fpsLimit(60.0f) {}
+        : m_fpsLimit(60.0f),
+        m_player_when_join(0),
+        m_world(nullptr) {
+        m_cheat_list.clear();
+    }
 
     void Game::init() {
         LOGD("Initializing Game..");

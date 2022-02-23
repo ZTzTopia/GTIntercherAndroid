@@ -114,57 +114,174 @@ void AppOnKey_hook(void *a1, void *a2, int type, int keycode, int c) {
     AppOnKey(a1, a2, type, keycode, c);
 }
 
-void (*NetHTTP_Update)(NetHTTP *thiz);
-void NetHTTP_Update_hook(NetHTTP *thiz) {
-    NetHTTP_Update(thiz);
-}
+// Because i dont know where to place this function so i put it here for now.
+#include "include/proton/shared/manager/VariantDB.h"
+#include "include/proton/shared/util/Variant.h"
 
-void (*ENetClient_Init)(uintptr_t thiz, std::string a1, enet_uint16 port, std::string a2);
-void ENetClient_Init_hook(uintptr_t thiz, std::string a1, enet_uint16 port, std::string a2) {
-    if (g_port == 65535) {
-        g_port = port;
+static VariantDB *g_variant_list;
+
+void OnSpawn(VariantList *variant_list) {
+    std::string on_spawn_info{ variant_list->Get(0).GetString() };
+    packet::TextParse text_parse{on_spawn_info};
+    if (text_parse.get_line_count() == 0) {
+        return;
     }
 
-    ENetClient_Init(thiz, std::move(a1), port, std::move(a2));
-}
-
-void (*App_Update)(void* thiz);
-void App_Update_hook(void* thiz) {
-    App_Update(thiz);
-}
-
-void (*enet_peer_sends)(ENetPeer* peer, enet_uint8 a2, ENetPacket* packet);
-void enet_peer_send_hook(ENetPeer* peer, enet_uint8 a2, ENetPacket* packet) {
-    memset(packet->data + packet->dataLength - 1, 0, 1);
-    char* data = (char*)(packet->data + 4);
-
-    std::string modified_packet = std::string(data);
-    packet::TextParse text_parse(modified_packet);
-    if (text_parse.get_line_count() != 0) {
-        if (!text_parse.get("requestedName", 0).empty()) {
-            // textParse.Set("game_version", "3.75");
-            text_parse.get_all_raw(modified_packet);
-        }
+    int net_id = text_parse.get<int>("netID", 1);
+    int user_id = text_parse.get<int>("userID", 1);
+    if (!net_id || !user_id) {
+        return;
     }
-#if 0
-    GameUpdatePacket* gameUpdatePacket = Packet::Decoder::GetStructPointerFromTankPacket(packet);
-    if (gameUpdatePacket) {
-        LOGD("gameUpdatePacket type: %d", (int)gameUpdatePacket->packetType);
-        LOGD("unk0: %d, unk1: %d, unk2: %d, unk3: %d, unk5: %d", gameUpdatePacket->unk0, gameUpdatePacket->unk1, gameUpdatePacket->unk2, gameUpdatePacket->unk4, gameUpdatePacket->unk5);
-        LOGD("unk6: %d, unk7: %d, unk8: %d, unk9: %f, unk10: %f", gameUpdatePacket->unk6, gameUpdatePacket->unk7, gameUpdatePacket->unk8, gameUpdatePacket->unk9, gameUpdatePacket->unk10);
-        LOGD("unk6: %f, unk7: %f, unk8: %f, unk9: %d, unk10: %d", gameUpdatePacket->unk11, gameUpdatePacket->unk12, gameUpdatePacket->unk13, gameUpdatePacket->unk14, gameUpdatePacket->unk15);
+
+    bool is_moderator{ false };
+    if (text_parse.get<int>("invis", 1) == 1) {
+        is_moderator = true;
+    }
+
+    if (text_parse.get("type", 1).find("local") != std::string::npos) {
+        LOGD("[OnSpawn] Add local player");
+        auto *local_player = new game::LocalPlayer{
+            net_id,
+            user_id,
+            text_parse.get("name", 1),
+            CL_Vec2i{text_parse.get<int>("posXY", 1), text_parse.get<int>("posXY", 2)},
+            is_moderator
+        };
+        g_game->m_world->set_local_player(local_player);
     }
     else {
-        LOGD("Type: %d, modifiedPacket: %s", *(packet->data), modifiedPacket.c_str());
+        if (g_game->m_player_when_join != 0) {
+            if (!g_game->m_world->get_local_player()) {
+                return;
+            }
+
+            if (g_game->m_world->get_owner_name() != g_game->m_world->get_local_player()->get_name()) {
+                return;
+            }
+
+            std::string name = text_parse.get("name", 1);
+            for (int i = 0; i < name.length(); i++) {
+                if (name[i] == '`') {
+                    name.erase(i, 2);
+                }
+            }
+
+            switch (g_game->m_player_when_join) {
+                case 1:
+                    LOGD("action|input\n|text|/pull %s", name.c_str());
+                    break;
+                case 2:
+                    LOGD("action|input\n|text|/kick %s", name.c_str());
+                    break;
+                case 3:
+                    LOGD("action|input\n|text|/ban %s", name.c_str());
+                    break;
+                default:
+                    break;
+            }
+        }
     }
-#endif
-    memcpy(packet->data + 4, modified_packet.c_str(), modified_packet.length());
-    enet_peer_sends(peer, a2, packet);
 }
 
-void (*GameLogicComponent_SendPing)(void *thiz, void *a2);
-void GameLogicComponent_SendPing_hook(void *thiz, void *a2) {
-    GameLogicComponent_SendPing(thiz, a2);
+void OnRequestWorldSelectMenu(VariantList *variant_list) {
+    delete g_game->m_world;
+    g_game->m_world = nullptr;
+}
+
+void OnConsoleMessage(VariantList *variant_list) {
+    if (g_game->m_world) {
+        std::string message{ variant_list->Get(0).GetString() };
+        std::string::size_type pos = message.find("$World Locked`` by ");
+        if (pos != std::string::npos) {
+            std::string::size_type last_pos = message.find("`5]``");
+            if (last_pos != std::string::npos) {
+                LOGD("owner: %s, %d, %d", message.substr(pos + 19, last_pos - 19 - pos).c_str(), pos, last_pos);
+                g_game->m_world->set_owner_name(message.substr(pos, last_pos));
+            }
+        }
+    }
+}
+
+void Init() {
+    g_variant_list = new VariantDB{};
+    g_variant_list->GetFunction("OnSpawn")->sig_function = [](VariantList *variant_list) {
+        if (!g_game->m_world) {
+            return;
+        }
+
+        return OnSpawn(variant_list);
+    };
+    g_variant_list->GetFunction("OnRequestWorldSelectMenu")->sig_function = [](VariantList *variant_list) {
+        if (!g_game->m_world) {
+            return;
+        }
+
+        return OnRequestWorldSelectMenu(variant_list);
+    };
+    g_variant_list->GetFunction("OnConsoleMessage")->sig_function = [](VariantList *variant_list) {
+        return OnConsoleMessage(variant_list);
+    };
+}
+
+bool once{ false };
+
+void ProcessTankUpdatePacket(GameUpdatePacket* game_update_packet) {
+    if (!once) {
+        Init();
+        once = true;
+    }
+
+    VariantList variant_list{};
+
+    auto *extended_data = packet::decoder::GetExtendedDataPointerFromTankPacket(game_update_packet);
+    switch (static_cast<int>(game_update_packet->packetType)) {
+        case PACKET_CALL_FUNCTION:
+            if (variant_list.SerializeFromMem(extended_data, static_cast<int>(game_update_packet->unk15), nullptr)) {
+                LOGD("%s", variant_list.GetContentsAsDebugString().c_str());
+
+                std::string function_name{ variant_list.Get(0).GetString() };
+                variant_list.GetVariantListStartingAt(&variant_list, 1);
+                g_variant_list->CallFunctionIfExists(function_name, &variant_list);
+            }
+            else {
+                LOGD("Error reading function packet, ignoring");
+            }
+            break;
+        case PACKET_SEND_MAP_DATA:
+            LOGD("[ProcessTankUpdatePacket] PACKET_SEND_MAP_DATA");
+
+            uint16_t name_length{ *reinterpret_cast<uint16_t *>(extended_data + 6) };
+
+            char *name = new char[name_length + 1];
+            memcpy(name, extended_data + 6 + sizeof(uint16_t), name_length);
+            memset(name + name_length, 0, 1);
+
+            g_game->m_world = new game::World{};
+            g_game->m_world->set_name(name);
+            break;
+    }
+}
+
+void (*ENetClient_ProcessPacket)(void *thiz, ENetEvent *event);
+void ENetClient_ProcessPacket_hook(void *thiz, ENetEvent *event) {
+    if (event->type == ENET_EVENT_TYPE_RECEIVE) {
+        GameUpdatePacket *gameUpdatePacket = packet::decoder::GetStructPointerFromTankPacket(event->packet);
+        if (gameUpdatePacket) {
+            LOGD("gameUpdatePacket type: %d", (int)gameUpdatePacket->packetType);
+            LOGD("unk0: %d, unk1: %d, unk2: %d, unk3: %d, unk5: %d", gameUpdatePacket->unk0, gameUpdatePacket->unk1, gameUpdatePacket->unk2, gameUpdatePacket->unk4, gameUpdatePacket->unk5);
+            LOGD("unk6: %d, unk7: %d, unk8: %d, unk9: %f, unk10: %f", gameUpdatePacket->unk6, gameUpdatePacket->unk7, gameUpdatePacket->unk8, gameUpdatePacket->unk9, gameUpdatePacket->unk10);
+            LOGD("unk11: %f, unk12: %f, unk13: %f, unk14: %d, unk15: %d", gameUpdatePacket->unk11, gameUpdatePacket->unk12, gameUpdatePacket->unk13, gameUpdatePacket->unk14, gameUpdatePacket->unk15);
+
+            ProcessTankUpdatePacket(gameUpdatePacket);
+        }
+        else {
+            int type = packet::decoder::GetMessageTypeFromPacket(event->packet);
+            const char *text = packet::decoder::GetTextPointerFromPacket(event->packet);
+            LOGD("Type: %d, Text: %s", type, text);
+        }
+    }
+
+    ENetClient_ProcessPacket(thiz, event);
 }
 
 namespace game {
@@ -175,32 +292,20 @@ namespace game {
             // set Dobby logging level.
             log_set_level(0);
 
-            // BaseApp::Draw()
+            // BaseApp::Draw(void)
             DobbyHook(GTS("_ZN7BaseApp4DrawEv"), (void *)BaseApp_Draw_hook, (void **)&BaseApp_Draw);
 
-            // BaseApp::SetFPSLimit()
-            // DobbyHook(GTS("_ZN7BaseApp11SetFPSLimitEf"), (void *)BaseApp_SetFPSLimit_hook, (void **)&BaseApp_SetFPSLimit);
+            // BaseApp::SetFPSLimit(float)
+            DobbyHook(GTS("_ZN7BaseApp11SetFPSLimitEf"), (void *)BaseApp_SetFPSLimit_hook, (void **)&BaseApp_SetFPSLimit);
 
-            // AppOnTouch()
+            // AppOnTouch(_JNIEnv *, _jobject *, int, float, float, int)
             DobbyHook(GTS("_Z10AppOnTouchP7_JNIEnvP8_jobjectiffi"), (void *)AppOnTouch_hook, (void **)&AppOnTouch);
 
-            // AppOnKey()
+            // AppOnKey(_JNIEnv *, _jobject *, int, int, int)
             DobbyHook(GTS("_Z8AppOnKeyP7_JNIEnvP8_jobjectiii"), (void *)AppOnKey_hook, (void **)&AppOnKey);
 
-            // NetHTTP::Update()
-            // DobbyHook(GTS("_ZN7NetHTTP6UpdateEv"), (void *)NetHTTP_Update_hook, (void **)&NetHTTP_Update);
-
-            // ENetClient::Init()
-            // DobbyHook(GTS("_ZN10ENetClient4InitESsiSs"), (void *)ENetClient_Init_hook, (void **)&ENetClient_Init);
-
-            // App::Update()
-            // DobbyHook(GTS("_ZN3App6UpdateEv"), (void *)App_Update_hook, (void **)&App_Update);
-
-            // enet_peer_send()
-            // DobbyHook(GTS("enet_peer_send"), (void *)enet_peer_send_hook, (void **)&enet_peer_sends);
-
-            // GameLogicComponent::SendPing()
-            // DobbyHook(GTS("_ZN18GameLogicComponent8SendPingEv"), (void *)GameLogicComponent_SendPing_hook, (void **)&GameLogicComponent_SendPing);
+            // ENetClient::ProcessPacket(_ENetEvent *)
+            DobbyHook(GTS("_ZN10ENetClient13ProcessPacketEP10_ENetEvent"), (void *)ENetClient_ProcessPacket_hook, (void **)&ENetClient_ProcessPacket);
         }
     } // namespace hook
 } // namespace game
