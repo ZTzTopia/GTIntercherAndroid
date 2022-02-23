@@ -58,7 +58,8 @@ LOCAL_CFLAGS := -fvisibility=hidden
 LOCAL_CPPFLAGS := -w -s -fvisibility=hidden -pthread -Wall -O3 -std=c++17 -fexceptions
 LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv2
 
-LOCAL_STATIC_LIBRARIES := libImGui libenet libdobby liblua
+LOCAL_STATIC_LIBRARIES := libImGui libenet liblua
+LOCAL_SHARED_LIBRARIES := libdobby
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/vendor/imgui
@@ -71,6 +72,8 @@ FILE_LIST += $(wildcard $(LOCAL_PATH)/src/api/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/client/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/game/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/include/KittyMemory/*.c*)
+FILE_LIST += $(wildcard $(LOCAL_PATH)/src/include/proton/shared/manager/*.c*)
+FILE_LIST += $(wildcard $(LOCAL_PATH)/src/include/proton/shared/util/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/packet/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/ui/*.c*)
 FILE_LIST += $(wildcard $(LOCAL_PATH)/src/ui/font/*.c*)

@@ -7,7 +7,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := GrowtopiaFix
 LOCAL_ARM_MODE := arm
 
-LOCAL_STATIC_LIBRARIES := libdobby
+LOCAL_SHARED_LIBRARIES := libdobby
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/src
 

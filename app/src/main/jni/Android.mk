@@ -2,12 +2,12 @@ LOCAL_PATH_YES := $(call my-dir)
 LOCAL_PATH := $(call my-dir)
 
 # ============================================================================
-# Dobby static libraries.
+# Dobby shared libraries.
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libdobby
-LOCAL_SRC_FILES := $(LOCAL_PATH)/libraries/$(TARGET_ARCH_ABI)/libdobby.a
-include $(PREBUILT_STATIC_LIBRARY)
+LOCAL_SRC_FILES := $(LOCAL_PATH)/libraries/$(TARGET_ARCH_ABI)/libdobby.so
+include $(PREBUILT_SHARED_LIBRARY)
 
 # ============================================================================
 # Include our library.
