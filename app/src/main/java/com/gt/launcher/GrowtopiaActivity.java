@@ -31,7 +31,7 @@ public class GrowtopiaActivity extends SharedActivity {
             }
             catch (UnsatisfiedLinkError e) {
                 e.printStackTrace();
-                Toast.makeText(this, "Failed to load native library", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Failed to load growtopia native library", Toast.LENGTH_SHORT).show();
             }
 
             super.onCreate(savedInstanceState);
