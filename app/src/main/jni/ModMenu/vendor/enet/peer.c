@@ -108,12 +108,10 @@ enet_peer_send (ENetPeer * peer, enet_uint8 channelID, ENetPacket * packet)
        packet -> dataLength > peer -> host -> maximumPacketSize)
      return -1;
 
-   if (peer->host->usingNewPacket) {
-       fragmentLength = peer->mtu - sizeof(ENetNewProtocolHeader) - sizeof(ENetProtocolSendFragment);
-   } 
-   else {
-       fragmentLength = peer->mtu - sizeof(ENetProtocolHeader) - sizeof(ENetProtocolSendFragment);
-   }
+   if (peer -> host -> usingNewPacket)
+       fragmentLength = peer -> mtu - sizeof(ENetNewProtocolHeader) - sizeof(ENetProtocolSendFragment);
+   else
+       fragmentLength = peer -> mtu - sizeof(ENetProtocolHeader) - sizeof(ENetProtocolSendFragment);
 
    if (peer->host->checksum != NULL)
      fragmentLength -= sizeof(enet_uint32);

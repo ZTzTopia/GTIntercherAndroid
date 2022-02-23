@@ -37,6 +37,9 @@ __unused __attribute__((constructor))
 void constructor_main() {
     LOGI(AY_OBFUSCATE("Starting Growtopia ModMenu.. Build time: " __DATE__ " " __TIME__));
 
+    // Seed the random number generator for enet new header integrity.
+    srand48(time(nullptr));
+
     // Create a new thread because we don't want do while loop make main thread
     // stuck.
     pthread_t pthread_id{};
