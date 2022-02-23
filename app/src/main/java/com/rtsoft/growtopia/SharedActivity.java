@@ -5,11 +5,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.app.admin.DeviceAdminReceiver;
-import android.app.admin.DevicePolicyManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipboardManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -39,7 +36,6 @@ import android.os.Process;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
-import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -540,7 +536,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             return "";
         }
 
-        // Alternatave GetBundlePrefix & GetBundleName.
+        // Alternative GetBundlePrefix & GetBundleName.
         return "";
         // return Environment.getExternalStorageDirectory().toString();
     }
@@ -631,9 +627,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     public static String get_macAddress() {
         WifiManager wimanager = (WifiManager) app.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         String macAddress = wimanager.getConnectionInfo().getMacAddress();
-        if (macAddress == null || macAddress.equals("02:00:00:00:00:00")) {
-            macAddress = randomMACAddress();
-        }
+        macAddress = randomMACAddress();
         Log.d("get_macAddress", macAddress);
         return macAddress == null ? "" : macAddress;
     }
