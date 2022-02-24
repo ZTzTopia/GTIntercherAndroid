@@ -26,6 +26,22 @@ static size_t commandSizes [ENET_PROTOCOL_COMMAND_COUNT] =
     sizeof (ENetProtocolSendFragment)
 };
 
+ENetHostAddress
+enet_address_map4 (enet_uint32 address)
+{
+    ENetHostAddress addr = ENET_IPV4MAPPED_PREFIX_INIT;
+    ((enet_uint32 *)addr.addr)[3] = address;
+    return addr;
+}
+
+ENetAddressFamily
+enet_get_address_family (const ENetAddress * address)
+{
+    if (!memcmp(& address->host, & ENET_IPV4MAPPED_PREFIX, ENET_IPV4MAPPED_PREFIX_LEN))
+        return ENET_IPV4;
+    return ENET_IPV6;
+}
+
 size_t
 enet_protocol_command_size (enet_uint8 commandNumber)
 {
@@ -307,7 +323,7 @@ enet_protocol_handle_connect (ENetHost * host, ENetProtocolHeader * header, ENet
         }
         else 
         if (currentPeer -> state != ENET_PEER_STATE_CONNECTING &&
-            currentPeer -> address.host == host -> receivedAddress.host)
+            !memcmp(& currentPeer -> address.host, & host -> receivedAddress.host, sizeof (ENetHostAddress)))
         {
             if (currentPeer -> address.port == host -> receivedAddress.port &&
                 currentPeer -> connectID == command -> connect.connectID)
@@ -1020,9 +1036,9 @@ enet_protocol_handle_incoming_commands (ENetHost * host, ENetEvent * event)
 
        if (peer -> state == ENET_PEER_STATE_DISCONNECTED ||
            peer -> state == ENET_PEER_STATE_ZOMBIE ||
-           ((host -> receivedAddress.host != peer -> address.host ||
+           ((memcmp(& host -> receivedAddress.host, & peer -> address.host, sizeof (ENetHostAddress)) ||
              host -> receivedAddress.port != peer -> address.port) &&
-             peer -> address.host != ENET_HOST_BROADCAST) ||
+             memcmp(& peer -> address.host, & ENET_HOST_BROADCAST, sizeof (ENetHostAddress))) ||
            (peer -> outgoingPeerID < ENET_PROTOCOL_MAXIMUM_PEER_ID &&
             sessionID != peer -> incomingSessionID))
          return 0;
@@ -1203,7 +1219,7 @@ commandError:
 }
  
 static int
-enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event)
+enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event, ENetAddressFamily family)
 {
     int packets;
 
@@ -1215,7 +1231,7 @@ enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event)
        buffer.data = host -> packetData [0];
        buffer.dataLength = sizeof (host -> packetData [0]);
 
-       receivedLength = enet_socket_receive (host -> socket,
+       receivedLength = enet_socket_receive (family == ENET_IPV4 ? host -> socket4 : host -> socket6,
                                              & host -> receivedAddress,
                                              & buffer,
                                              1);
@@ -1627,6 +1643,9 @@ enet_protocol_send_outgoing_commands (ENetHost * host, ENetEvent * event, int ch
          currentPeer < & host -> peers [host -> peerCount];
          ++ currentPeer)
     {
+        ENetAddressFamily family;
+        ENetSocket socket;
+
         if (currentPeer -> state == ENET_PEER_STATE_DISCONNECTED ||
             currentPeer -> state == ENET_PEER_STATE_ZOMBIE)
           continue;
@@ -1733,10 +1752,12 @@ enet_protocol_send_outgoing_commands (ENetHost * host, ENetEvent * event, int ch
 
         if (currentPeer -> outgoingPeerID < ENET_PROTOCOL_MAXIMUM_PEER_ID)
           host -> headerFlags |= currentPeer -> outgoingSessionID << ENET_PROTOCOL_HEADER_SESSION_SHIFT;
+
         if (host -> usingNewPacket)
-            newHeader -> peerID = ENET_HOST_TO_NET_16(currentPeer -> outgoingPeerID | host -> headerFlags);
+          newHeader -> peerID = ENET_HOST_TO_NET_16(currentPeer -> outgoingPeerID | host -> headerFlags);
         else
-            header -> peerID = ENET_HOST_TO_NET_16(currentPeer -> outgoingPeerID | host -> headerFlags);
+          header -> peerID = ENET_HOST_TO_NET_16(currentPeer -> outgoingPeerID | host -> headerFlags);
+
         if (host->checksum != NULL)
         {
             enet_uint32 * checksum = (enet_uint32 *) & headerData [host -> buffers -> dataLength];
@@ -1754,7 +1775,16 @@ enet_protocol_send_outgoing_commands (ENetHost * host, ENetEvent * event, int ch
 
         currentPeer -> lastSendTime = host -> serviceTime;
 
-        sentLength = enet_socket_send (host -> socket, & currentPeer -> address, host -> buffers, host -> bufferCount);
+        family = enet_get_address_family (& currentPeer -> address);
+        socket = family == ENET_IPV4 ? host -> socket4 : host -> socket6;
+        if (socket == ENET_SOCKET_NULL)
+         return -1;
+
+        family = enet_get_address_family (& currentPeer -> address);
+        socket = family == ENET_IPV4 ? host -> socket4 : host -> socket6;
+        if (socket == ENET_SOCKET_NULL)
+          return -1;
+        sentLength = enet_socket_send (socket, & currentPeer -> address, host -> buffers, host -> bufferCount, family);
 
         enet_protocol_remove_sent_unreliable_commands (currentPeer);
 
@@ -1869,21 +1899,39 @@ enet_host_service (ENetHost * host, ENetEvent * event, enet_uint32 timeout)
           break;
        }
 
-       switch (enet_protocol_receive_incoming_commands (host, event))
+       if (host -> socket4 != ENET_SOCKET_NULL)
+         switch (enet_protocol_receive_incoming_commands(host, event, ENET_IPV4))
        {
-       case 1:
-          return 1;
+           case 1:
+               return 1;
 
-       case -1:
+           case -1:
 #ifdef ENET_DEBUG
-          perror ("Error receiving incoming packets");
+               perror ("Error receiving incoming packets");
 #endif
 
-          return -1;
+               return -1;
 
-       default:
-          break;
+           default:
+               break;
        }
+
+        if (host -> socket4 != ENET_SOCKET_NULL)
+          switch (enet_protocol_receive_incoming_commands(host, event, ENET_IPV6))
+        {
+            case 1:
+                return 1;
+
+            case -1:
+#ifdef ENET_DEBUG
+                perror ("Error receiving incoming packets");
+#endif
+
+                return -1;
+
+            default:
+                break;
+        }
 
        switch (enet_protocol_send_outgoing_commands (host, event, 1))
        {
@@ -1932,7 +1980,7 @@ enet_host_service (ENetHost * host, ENetEvent * event, enet_uint32 timeout)
 
           waitCondition = ENET_SOCKET_WAIT_RECEIVE | ENET_SOCKET_WAIT_INTERRUPT;
 
-          if (enet_socket_wait (host -> socket, & waitCondition, ENET_TIME_DIFFERENCE (timeout, host -> serviceTime)) != 0)
+          if (enet_socket_wait (host -> socket4, host -> socket6, & waitCondition, ENET_TIME_DIFFERENCE (timeout, host -> serviceTime)) != 0)
             return -1;
        }
        while (waitCondition & ENET_SOCKET_WAIT_INTERRUPT);

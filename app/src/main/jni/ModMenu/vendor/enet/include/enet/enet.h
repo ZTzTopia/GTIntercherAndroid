@@ -72,24 +72,39 @@ typedef enum _ENetSocketShutdown
     ENET_SOCKET_SHUTDOWN_READ_WRITE = 2
 } ENetSocketShutdown;
 
-#define ENET_HOST_ANY       0
-#define ENET_HOST_BROADCAST 0xFFFFFFFFU
-#define ENET_PORT_ANY       0
+typedef struct _ENetHostAddress {
+    enet_uint8 addr[16];
+} ENetHostAddress;
+
+#define ENET_HOST_ANY_INIT { { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } }                         /**< specifies the default server host (macro for variable initialization) */
+static const ENetHostAddress ENET_HOST_ANY = ENET_HOST_ANY_INIT;                           /**< specifies the default server host (global constant variable) */
+#define ENET_IPV4MAPPED_PREFIX_INIT { { 0,0,0,0,0,0,0,0,0,0,0xff,0xff,0,0,0,0 } }          /**< specifies the IPv4-mapped IPv6 prefix (macro for variable initialization) */
+static const ENetHostAddress ENET_IPV4MAPPED_PREFIX = ENET_IPV4MAPPED_PREFIX_INIT;         /**< specifies the IPv4-mapped IPv6 prefix (global constant variable) */
+#define ENET_HOST_BROADCAST_INIT { { 0,0,0,0,0,0,0,0,0,0,0xff,0xff,0xff,0xff,0xff,0xff } } /**< specifies a IPv4 subnet-wide broadcast (macro for variable initialization) */
+static const ENetHostAddress ENET_HOST_BROADCAST = ENET_HOST_BROADCAST_INIT;               /**< specifies a IPv4 subnet-wide broadcast (global constant variable) */
+enum {
+    ENET_IPV4MAPPED_PREFIX_LEN = 12,                                                       /**< specifies the length of the IPv4-mapped IPv6 prefix */
+    ENET_PORT_ANY              = 0                                                         /**< specifies that a port should be automatically chosen */
+};
+
+typedef struct _ENetAddress {
+    ENetHostAddress host;
+#ifdef WIN32
+    u_long scopeID;
+#else
+    uint32_t scopeID;
+#endif
+    enet_uint16 port;
+} ENetAddress;
 
 /**
- * Portable internet address structure. 
- *
- * The host must be specified in network byte-order, and the port must be in host 
- * byte-order. The constant ENET_HOST_ANY may be used to specify the default 
- * server host. The constant ENET_HOST_BROADCAST may be used to specify the
- * broadcast address (255.255.255.255).  This makes sense for enet_host_connect,
- * but not for enet_host_create.  Once a server responds to a broadcast, the
- * address is updated from ENET_HOST_BROADCAST to the server's actual IP address.
+ * The address family type.
  */
-typedef struct _ENetAddress {
-	enet_uint32 host;
-	enet_uint16 port;
-} ENetAddress;
+typedef enum _ENetAddressFamily {
+    ENET_NO_ADDRESS_FAMILY = 0,
+    ENET_IPV4 = (1 << 0),
+    ENET_IPV6 = (1 << 1)
+} ENetAddressFamily;
 
 /**
  * Packet flag bit constants.
@@ -265,9 +280,8 @@ typedef struct _ENetPeer
    enet_uint8    outgoingSessionID;
    enet_uint8    incomingSessionID;
    ENetAddress   address;            /**< Internet address of the peer */
-   enet_uint32   pad[4];             /**< wtf is here? */
    void *        data;               /**< Application private data, may be freely modified */
-   enet_uint32   state;
+   ENetPeerState state;
    ENetChannel * channels;
    size_t        channelCount;       /**< Number of channels allocated for communication with peer */
    enet_uint32   incomingBandwidth;  /**< Downstream bandwidth of the client in bytes/second */
@@ -358,21 +372,19 @@ typedef int (ENET_CALLBACK * ENetInterceptCallback) (struct _ENetHost * host, st
   */
 typedef struct _ENetHost
 {
-   enet_uint32          pad;                         /**< wtf is here? */
-   ENetSocket           socket;
+   ENetSocket           socket4;
+   ENetSocket           socket6;
    ENetAddress          address;                     /**< Internet address of the host */
    enet_uint32          incomingBandwidth;           /**< downstream bandwidth of the host */
    enet_uint32          outgoingBandwidth;           /**< upstream bandwidth of the host */
    enet_uint32          bandwidthThrottleEpoch;
    enet_uint32          mtu;
    enet_uint32          randomSeed;
-   enet_uint32          pad2[4];                     /**< wtf is here? */
    int                  recalculateBandwidthLimits;
    ENetPeer *           peers;                       /**< array of peers allocated for this host */
    size_t               peerCount;                   /**< number of peers allocated for this host */
    size_t               channelLimit;                /**< maximum number of channels allowed for connected peers */
    enet_uint32          serviceTime;
-   enet_uint32          pad3;                        /**< wtf is here? */
    ENetList             dispatchQueue;
    int                  continueSending;
    size_t               packetSize;
@@ -392,7 +404,6 @@ typedef struct _ENetHost
    enet_uint32          totalReceivedData;           /**< total data received, user should reset to 0 as needed to prevent overflow */
    enet_uint32          totalReceivedPackets;        /**< total UDP packets received, user should reset to 0 as needed to prevent overflow */
    ENetInterceptCallback intercept;                  /**< callback the user can set to intercept received raw UDP packets */
-   enet_uint32          pad4[2];                     /**< wtf is here? */
    size_t               connectedPeers;
    size_t               bandwidthLimitedPeers;
    size_t               duplicatePeers;              /**< optional number of allowed peers from duplicate IPs, defaults to ENET_PROTOCOL_MAXIMUM_PEER_ID */
@@ -495,15 +506,15 @@ ENET_API void enet_time_set (enet_uint32);
 /** @defgroup socket ENet socket functions
     @{
 */
-ENET_API ENetSocket enet_socket_create (ENetSocketType);
-ENET_API int        enet_socket_bind (ENetSocket, const ENetAddress *);
+ENET_API ENetSocket enet_socket_create (ENetSocketType, ENetAddressFamily);
+ENET_API int        enet_socket_bind (ENetSocket, const ENetAddress *, ENetAddressFamily);
 ENET_API int        enet_socket_get_address (ENetSocket, ENetAddress *);
 ENET_API int        enet_socket_listen (ENetSocket, int);
 ENET_API ENetSocket enet_socket_accept (ENetSocket, ENetAddress *);
-ENET_API int        enet_socket_connect (ENetSocket, const ENetAddress *);
-ENET_API int        enet_socket_send (ENetSocket, const ENetAddress *, const ENetBuffer *, size_t);
+ENET_API int        enet_socket_connect (ENetSocket, const ENetAddress *, ENetAddressFamily);
+ENET_API int        enet_socket_send (ENetSocket, const ENetAddress *, const ENetBuffer *, size_t, ENetAddressFamily);
 ENET_API int        enet_socket_receive (ENetSocket, ENetAddress *, ENetBuffer *, size_t);
-ENET_API int        enet_socket_wait (ENetSocket, enet_uint32 *, enet_uint32);
+ENET_API int        enet_socket_wait (ENetSocket, ENetSocket, enet_uint32 *, enet_uint32);
 ENET_API int        enet_socket_set_option (ENetSocket, ENetSocketOption, int);
 ENET_API int        enet_socket_get_option (ENetSocket, ENetSocketOption, int *);
 ENET_API int        enet_socket_shutdown (ENetSocket, ENetSocketShutdown);
@@ -555,6 +566,18 @@ ENET_API int enet_address_get_host_ip (const ENetAddress * address, char * hostN
     @retval < 0 on failure
 */
 ENET_API int enet_address_get_host (const ENetAddress * address, char * hostName, size_t nameLength);
+
+/** Maps an IPv4 Address to an IPv6 address.
+    @param address IPv4 address in network byte order
+    @returns the IPv4-mapped IPv6 address in network byte order
+*/
+ENET_API ENetHostAddress enet_address_map4 (enet_uint32 address);
+
+/** Returns the Address family of an (IPv4-mapped) IPv6 address.
+    @param address IPv6 address
+    @returns address family
+*/
+ENET_API ENetAddressFamily enet_get_address_family (const ENetAddress * address);
 
 /** @} */
 

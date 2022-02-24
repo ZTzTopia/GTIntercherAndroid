@@ -97,70 +97,6 @@ enet_peer_throttle (ENetPeer * peer, enet_uint32 rtt)
     @retval < 0 on failure
 */
 
-#include <android/log.h>
-
-#define TAG "ModMenu"
-#define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG,   TAG, __VA_ARGS__))
-
-typedef struct _ENetPeer2 {
-    ENetListNode dispatchList;    // 0
-    struct _ENetHost *host;       // 16
-    enet_uint16 outgoingPeerID;   // 24
-    enet_uint16 incomingPeerID;   // 28
-    enet_uint32 connectID;        // 32
-    enet_uint8 outgoingSessionID; // 36
-    enet_uint8 incomingSessionID; // 40
-    ENetAddress address;          // 44
-    enet_uint32 pad[4];           // 48
-    void *data;                   // 64
-    enet_uint32 state;            // 72
-    ENetChannel *channels;        // 80
-} ENetPeer2;                      // 88
-
-typedef struct _ENetHost2
-{
-    uint32_t             pad;                         // 0
-    ENetSocket           socket;                      // 4
-    uint32_t             pad2[4];                     // 8
-    ENetAddress          address;                     // 24
-    enet_uint32          incomingBandwidth;           // 32
-    enet_uint32          outgoingBandwidth;           // 36
-    enet_uint32          bandwidthThrottleEpoch;      // 40
-    enet_uint32          mtu;                         // 44
-    enet_uint32          randomSeed;                  // 48
-    int                  recalculateBandwidthLimits;  // 52
-    ENetPeer *           peers;                       // 56
-    size_t               peerCount;                   // 64
-    size_t               channelLimit;                // 72
-    enet_uint32          serviceTime;                 // 80
-    enet_uint32          pad3;                        // 84
-    ENetList             dispatchQueue;               // 88
-    int                  continueSending;
-    size_t               packetSize;
-    enet_uint16          headerFlags;
-    ENetProtocol         commands [ENET_PROTOCOL_MAXIMUM_PACKET_COMMANDS];
-    size_t               commandCount;
-    ENetBuffer           buffers [ENET_BUFFER_MAXIMUM];
-    size_t               bufferCount;
-    ENetChecksumCallback checksum;
-    ENetCompressor       compressor;
-    enet_uint8           packetData [2][ENET_PROTOCOL_MAXIMUM_MTU];
-    ENetAddress          receivedAddress;
-    enet_uint8 *         receivedData;
-    size_t               receivedDataLength;
-    enet_uint32          totalSentData;
-    enet_uint32          totalSentPackets;
-    enet_uint32          totalReceivedData;
-    enet_uint32          totalReceivedPackets;
-    ENetInterceptCallback intercept;
-    enet_uint32          pad4[2];
-    size_t               connectedPeers;              // 11016
-    size_t               bandwidthLimitedPeers;       // 11024
-    size_t               duplicatePeers;              // 11032
-    size_t               maximumPacketSize;           // 11040
-    size_t               maximumWaitingData;          // 11048
-} ENetHost2;                                          // 11056
-
 int
 enet_peer_send (ENetPeer * peer, enet_uint8 channelID, ENetPacket * packet)
 {
@@ -168,25 +104,11 @@ enet_peer_send (ENetPeer * peer, enet_uint8 channelID, ENetPacket * packet)
    ENetProtocol command;
    size_t fragmentLength;
 
-   // ENetHost = 11056u; - gt
-   // ENetHost = 11032; - regular enet
-   // ENetPeer = 488u; -gt
-   // ENetPeer = 476; - regular enet
-
-   // 11056 - 11032 = 24
-   // 488 - 476 = 16
-
-   LOGD("%lu, %lu", sizeof(ENetHost), sizeof(ENetPeer));
-   LOGD("%lu, %lu", sizeof(ENetPeer2), sizeof(ENetHost2));
-   LOGD("%d != %d", peer->state, ENET_PEER_STATE_CONNECTED); // here problem
-   LOGD("%d > %zu", channelID, peer->channelCount);
-   LOGD("%zu > %zu", packet -> dataLength, peer -> host -> maximumPacketSize);
    if (peer -> state != ENET_PEER_STATE_CONNECTED ||
        channelID > peer -> channelCount ||
        packet -> dataLength > peer -> host -> maximumPacketSize)
      return -1;
 
-   LOGD("fail yes ?%d", peer -> host -> usingNewPacket);
    if (peer -> host -> usingNewPacket)
        fragmentLength = peer -> mtu - sizeof(ENetNewProtocolHeader) - sizeof(ENetProtocolSendFragment);
    else
@@ -194,8 +116,6 @@ enet_peer_send (ENetPeer * peer, enet_uint8 channelID, ENetPacket * packet)
 
    if (peer->host->checksum != NULL)
      fragmentLength -= sizeof(enet_uint32);
-
-   LOGD("fragmentLength: %zu", fragmentLength);
 
    if (packet -> dataLength > fragmentLength)
    {
@@ -292,7 +212,6 @@ enet_peer_send (ENetPeer * peer, enet_uint8 channelID, ENetPacket * packet)
       command.sendUnreliable.dataLength = ENET_HOST_TO_NET_16 (packet -> dataLength);
    }
 
-   LOGD("aaa");
    if (enet_peer_queue_outgoing_command (peer, & command, packet, 0, packet -> dataLength) == NULL)
      return -1;
 
