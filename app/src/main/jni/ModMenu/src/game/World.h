@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "LocalPlayer.h"
+#include "RemotePlayer.h"
 
 namespace game {
     class World {
@@ -24,6 +25,9 @@ namespace game {
 
         LocalPlayer* get_local_player() { return m_local_player; }
         void set_local_player(LocalPlayer* local_player) { m_local_player = local_player; }
+
+    public:
+        std::vector<RemotePlayer *> m_remote_players;
 
     private:
         std::string m_name;

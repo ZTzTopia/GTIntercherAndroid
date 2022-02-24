@@ -146,12 +146,22 @@ void OnSpawn(VariantList *variant_list) {
             net_id,
             user_id,
             text_parse.get("name", 1),
-            CL_Vec2i{text_parse.get<int>("posXY", 1), text_parse.get<int>("posXY", 2)},
+            CL_Vec2i{ text_parse.get<int>("posXY", 1), text_parse.get<int>("posXY", 2) },
             is_moderator
         };
         g_game->m_world->set_local_player(local_player);
     }
     else {
+        LOGD("[OnSpawn] Add remote player");
+        auto *remote_player = new game::RemotePlayer{
+                net_id,
+                user_id,
+                text_parse.get("name", 1),
+                CL_Vec2i{ text_parse.get<int>("posXY", 1), text_parse.get<int>("posXY", 2) },
+                is_moderator
+        };
+        g_game->m_world->m_remote_players.push_back(remote_player);
+
         if (g_game->m_player_when_join != 0) {
             if (!g_game->m_world->get_local_player()) {
                 return;
@@ -170,13 +180,13 @@ void OnSpawn(VariantList *variant_list) {
 
             switch (g_game->m_player_when_join) {
                 case 1:
-                    packet::sender::SendPacket(NET_MESSAGE_GENERIC_TEXT, utilities::utils::string_format("action|input\n|text|/pull %s", name.c_str()), g_peer);
+                    packet::sender::send_packet(NET_MESSAGE_GENERIC_TEXT, utilities::utils::string_format("action|input\n|text|/pull %s", name.c_str()), g_peer);
                     break;
                 case 2:
-                    packet::sender::SendPacket(NET_MESSAGE_GENERIC_TEXT, utilities::utils::string_format("action|input\n|text|/kick %s", name.c_str()), g_peer);
+                    packet::sender::send_packet(NET_MESSAGE_GENERIC_TEXT, utilities::utils::string_format("action|input\n|text|/kick %s", name.c_str()), g_peer);
                     break;
                 case 3:
-                    packet::sender::SendPacket(NET_MESSAGE_GENERIC_TEXT, utilities::utils::string_format("action|input\n|text|/ban %s", name.c_str()), g_peer);
+                    packet::sender::send_packet(NET_MESSAGE_GENERIC_TEXT, utilities::utils::string_format("action|input\n|text|/ban %s", name.c_str()), g_peer);
                     break;
                 default:
                     break;
@@ -295,6 +305,8 @@ void ENetClient_ProcessPacket_hook(void *thiz, ENetEvent *event) {
                 }
                 break;
             }
+            default:
+                break;
         }
     }
 
@@ -304,27 +316,6 @@ void ENetClient_ProcessPacket_hook(void *thiz, ENetEvent *event) {
 int (*old_enet_peer_send)(ENetPeer *peer, enet_uint8 a2, ENetPacket *packet);
 int enet_peer_send_hook(ENetPeer *peer, enet_uint8 a2, ENetPacket *packet) {
     g_peer = peer;
-    LOGD("peer state: %d", g_peer->state);
-
-    memset(packet->data + packet->dataLength - 1, 0, 1);
-    char *data = (char*)(packet->data + 4);
-
-    std::string modified_packet = std::string(data);
-
-    /*GameUpdatePacket* gameUpdatePacket = packet::decoder::GetStructPointerFromTankPacket(packet);
-    if (gameUpdatePacket) {
-        LOGD("gameUpdatePacket type: %d", (int)gameUpdatePacket->packetType);
-        LOGD("unk0: %d, unk1: %d, unk2: %d, unk3: %d, unk5: %d", gameUpdatePacket->unk0, gameUpdatePacket->unk1, gameUpdatePacket->unk2, gameUpdatePacket->unk4, gameUpdatePacket->unk5);
-        LOGD("unk6: %d, unk7: %d, unk8: %d, unk9: %f, unk10: %f", gameUpdatePacket->unk6, gameUpdatePacket->unk7, gameUpdatePacket->unk8, gameUpdatePacket->unk9, gameUpdatePacket->unk10);
-        LOGD("unk11: %f, unk12: %f, unk13: %f, unk14: %d, unk15: %d", gameUpdatePacket->unk11, gameUpdatePacket->unk12, gameUpdatePacket->unk13, gameUpdatePacket->unk14, gameUpdatePacket->unk15);
-    }
-    else {
-        */LOGD("Type: %d, modifiedPacket: %s", *(packet->data), modified_packet.c_str());
-    //}
-
-    //enet_peer_send(peer, a2, packet);
-    //std::terminate();
-
     return old_enet_peer_send(peer, a2, packet);
 }
 
