@@ -13,7 +13,9 @@ namespace game {
             m_name(name),
             m_is_moderator(is_moderator) {}
         ~LocalPlayer() = default;
-        
+
+        int get_user_id() { return m_user_id; }
+
         std::string get_name() { return m_name; }
 
     private:

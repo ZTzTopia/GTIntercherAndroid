@@ -19,12 +19,16 @@ namespace game {
         std::string get_owner_name() { return m_owner_name; }
         void set_owner_name(const std::string& owner_name) { m_owner_name = owner_name; }
 
+        int get_owner_user_id() { return m_owner_user_id; }
+        void set_owner_user_id(int owner_uuid) { m_owner_user_id = owner_uuid; }
+
         LocalPlayer* get_local_player() { return m_local_player; }
         void set_local_player(LocalPlayer* local_player) { m_local_player = local_player; }
 
     private:
         std::string m_name;
         std::string m_owner_name;
+        int m_owner_user_id;
         LocalPlayer *m_local_player;
     }; // class World
 } // namespace game
