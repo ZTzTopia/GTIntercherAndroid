@@ -6,17 +6,17 @@ package com.gt.launcher.utils;
 import static java.util.Locale.ENGLISH;
 
 import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
+import com.gt.launcher.BuildConfig;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -27,8 +27,7 @@ public final class CrashHandler {
     public static void init(final Context app, final boolean overlayRequired) {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
-            public void uncaughtException(Thread thread, Throwable throwable) {
-                Log.e("AppCrash", "Error just lunched ");
+            public void uncaughtException(@NonNull Thread thread, @NonNull Throwable throwable) {
                 try {
                     tryUncaughtException(thread, throwable);
                 }
@@ -44,55 +43,27 @@ public final class CrashHandler {
             }
 
             private void tryUncaughtException(Thread thread, Throwable throwable) {
-                Log.e("AppCrash", "Try saving log");
-
                 final String time = new SimpleDateFormat("yyyy_MM_dd-HH_mm_ss", ENGLISH).format(new Date());
                 String fileName = "mod_menu_crash_" + time + ".txt";
-                String dirName;
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    dirName = "/storage/emulated/0/Documents/";
-                }
-                else {
-                    dirName = String.valueOf(app.getExternalFilesDir(null));
-                }
-
+                String dirName = String.valueOf(app.getExternalFilesDir(null));
                 File crashFile = new File(dirName, fileName);
 
-                String versionName = "unknown";
-                long versionCode = 0;
-                try {
-                    PackageInfo packageInfo = app.getPackageManager().getPackageInfo(app.getPackageName(), 0);
-                    versionName = packageInfo.versionName;
-                    versionCode = Build.VERSION.SDK_INT >= 28 ? packageInfo.getLongVersionCode()
-                            : packageInfo.versionCode;
-                }
-                catch (PackageManager.NameNotFoundException e) {
-                    e.printStackTrace();
-                }
-
-                String fullStackTrace;
-                {
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    throwable.printStackTrace(pw);
-                    fullStackTrace = sw.toString();
-                    pw.close();
-                }
-
-                StringBuilder devInfo = new StringBuilder();
-                devInfo.append("************* Crash Head ****************\n");
-                devInfo.append("Time Of Crash      : ").append(time).append("\n");
-                devInfo.append("Device Manufacturer: ").append(Build.MANUFACTURER).append("\n");
-                devInfo.append("Device Model       : ").append(Build.MODEL).append("\n");
-                devInfo.append("Android Version    : ").append(Build.VERSION.RELEASE).append("\n");
-                devInfo.append("Android SDK        : ").append(Build.VERSION.SDK_INT).append("\n");
-                devInfo.append("App VersionName    : ").append(versionName).append("\n");
-                devInfo.append("App VersionCode    : ").append(versionCode).append("\n");
-                devInfo.append("************* Crash Head ****************\n");
-                devInfo.append("\n").append(fullStackTrace);
-
-                String errorLog = devInfo.toString();
+                String errorLog =
+                        "Crash time: " + time + "\n" +
+                        "Version: " + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")\n" +
+                        "Brand: " + Build.BRAND + "\n" +
+                        "Device: " + Build.DEVICE + "\n" +
+                        "Hardware: " + Build.HARDWARE + "\n" +
+                        "ID: " + Build.ID + "\n" +
+                        "Manufacturer: " + Build.MANUFACTURER + "\n" +
+                        "Model: " + Build.MODEL + "\n" +
+                        "Product: " + Build.PRODUCT + "\n" +
+                        "Type: " + Build.TYPE + "\n" +
+                        "Version.CodeName: " + Build.VERSION.CODENAME + "\n" +
+                        "Version.Incremental: " + Build.VERSION.INCREMENTAL + "\n" +
+                        "Version.Release: " + Build.VERSION.RELEASE + "\n" +
+                        "Version.SDK: " + Build.VERSION.SDK_INT + "\n" +
+                        Log.getStackTraceString(throwable);
 
                 try {
                     writeFile(crashFile, errorLog);
@@ -103,9 +74,6 @@ public final class CrashHandler {
 
                 Toast.makeText(app, "Game has crashed unexpectedly", Toast.LENGTH_LONG).show();
                 Toast.makeText(app, "Log saved to: " + String.valueOf(crashFile).replace("/storage/emulated/0/", ""), Toast.LENGTH_LONG).show();
-
-                Log.e("AppCrash", "Done");
-
                 System.exit(1);
             }
 
