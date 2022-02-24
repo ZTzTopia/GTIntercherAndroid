@@ -148,6 +148,7 @@ typedef struct _ENetPacket
 {
    size_t                   referenceCount;  /**< internal use only */
    enet_uint32              flags;           /**< bitwise-or of ENetPacketFlag constants */
+   enet_uint32              pad;             /**< wtf is here? */
    enet_uint8 *             data;            /**< allocated data for packet */
    size_t                   dataLength;      /**< length of data */
    ENetPacketFreeCallback   freeCallback;    /**< function to be called when the packet is no longer in use */
@@ -255,7 +256,7 @@ typedef struct _ENetChannel
  * No fields should be modified unless otherwise specified. 
  */
 typedef struct _ENetPeer
-{ 
+{
    ENetListNode  dispatchList;
    struct _ENetHost * host;
    enet_uint16   outgoingPeerID;
@@ -264,8 +265,9 @@ typedef struct _ENetPeer
    enet_uint8    outgoingSessionID;
    enet_uint8    incomingSessionID;
    ENetAddress   address;            /**< Internet address of the peer */
+   enet_uint32   pad[4];             /**< wtf is here? */
    void *        data;               /**< Application private data, may be freely modified */
-   ENetPeerState state;
+   enet_uint32   state;
    ENetChannel * channels;
    size_t        channelCount;       /**< Number of channels allocated for communication with peer */
    enet_uint32   incomingBandwidth;  /**< Downstream bandwidth of the client in bytes/second */
@@ -356,6 +358,7 @@ typedef int (ENET_CALLBACK * ENetInterceptCallback) (struct _ENetHost * host, st
   */
 typedef struct _ENetHost
 {
+   enet_uint32          pad;                         /**< wtf is here? */
    ENetSocket           socket;
    ENetAddress          address;                     /**< Internet address of the host */
    enet_uint32          incomingBandwidth;           /**< downstream bandwidth of the host */
@@ -363,11 +366,13 @@ typedef struct _ENetHost
    enet_uint32          bandwidthThrottleEpoch;
    enet_uint32          mtu;
    enet_uint32          randomSeed;
+   enet_uint32          pad2[4];                     /**< wtf is here? */
    int                  recalculateBandwidthLimits;
    ENetPeer *           peers;                       /**< array of peers allocated for this host */
    size_t               peerCount;                   /**< number of peers allocated for this host */
    size_t               channelLimit;                /**< maximum number of channels allowed for connected peers */
    enet_uint32          serviceTime;
+   enet_uint32          pad3;                        /**< wtf is here? */
    ENetList             dispatchQueue;
    int                  continueSending;
    size_t               packetSize;
@@ -387,12 +392,13 @@ typedef struct _ENetHost
    enet_uint32          totalReceivedData;           /**< total data received, user should reset to 0 as needed to prevent overflow */
    enet_uint32          totalReceivedPackets;        /**< total UDP packets received, user should reset to 0 as needed to prevent overflow */
    ENetInterceptCallback intercept;                  /**< callback the user can set to intercept received raw UDP packets */
+   enet_uint32          pad4[2];                     /**< wtf is here? */
    size_t               connectedPeers;
    size_t               bandwidthLimitedPeers;
    size_t               duplicatePeers;              /**< optional number of allowed peers from duplicate IPs, defaults to ENET_PROTOCOL_MAXIMUM_PEER_ID */
    size_t               maximumPacketSize;           /**< the maximum allowable packet size that may be sent or received on a peer */
    size_t               maximumWaitingData;          /**< the maximum aggregate amount of buffer space a peer may use waiting for packets to be delivered */
-   size_t               usingNewPacket;              /**< the New and Improved! */
+   enet_uint8           usingNewPacket;              /**< the New and Improved! */
 } ENetHost;
 
 /**
