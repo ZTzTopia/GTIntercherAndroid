@@ -10,7 +10,7 @@ def isReleaseBuild = ciBuild && ciRef.contains("master")
 def version = "0.0.3"
 def versionDisplayName = "${version}"
 if (!isReleaseBuild) {
-    versionDisplayName = "${version} Dev (#${ciRunNumber})"
+    versionDisplayName = "${version} Dev${ciBuild ? " (#${ciRunNumber})" : ""}"
 }
 
 android {
