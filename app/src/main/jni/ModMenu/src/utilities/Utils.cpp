@@ -96,18 +96,18 @@ namespace utilities {
             return string;
         }
 
-        int HashString(const char* data, int length) {
-            int hash = 0x55555555;
+        uint32_t HashString(const char* data, int length) {
+            uint32_t hash = 0x55555555;
             if (data) {
                 if (length >= 1) {
                     while (length) {
-                        hash = (hash >> 27) + (hash << 5) + *data++;
+                        hash = (hash >> 27) + (hash << 5) + *reinterpret_cast<const uint8_t *>(data++);
                         length--;
                     }
                 }
                 else {
                     while (*data) {
-                        hash = (hash >> 27) + (hash << 5) + *data++;
+                        hash = (hash >> 27) + (hash << 5) + *reinterpret_cast<const uint8_t*>(data++);
                     }
                 }
             }
@@ -115,17 +115,17 @@ namespace utilities {
             return hash;
         }
 
-        int GetDeviceHash() {
-            std::string deviceId = GenerateRandomNumber(8);
-            if (!deviceId.empty()) {
-                deviceId.append("RT");
-                return HashString(deviceId.c_str(), 0);
+        uint32_t GetDeviceHash() {
+            std::string device_id = GenerateRandomNumber(8);
+            if (!device_id.empty()) {
+                device_id.append("RT");
+                return HashString(device_id.c_str(), 0);
             }
 
             return 0;
         }
 
-        int GetDeviceSecondaryHash() {
+        uint32_t GetDeviceSecondaryHash() {
             std::string mac = GenerateRandomMac();
             if (!mac.empty()) {
                 mac.append("RT");

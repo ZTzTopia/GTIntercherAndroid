@@ -11,9 +11,9 @@ namespace utilities {
         std::string GenerateRandomHex(size_t length, bool uppercase = false);
         std::string GenerateRandomMac();
 
-        int HashString(const char* data, int length);
-        int GetDeviceHash();
-        int GetDeviceSecondaryHash();
+        uint32_t HashString(const char* data, int length);
+        uint32_t GetDeviceHash();
+        uint32_t GetDeviceSecondaryHash();
 
         void string_replace(std::string &str, const std::string &from, const std::string &to);
         std::vector<std::string> string_tokenize(const std::string &str, const std::string &delimiters);
