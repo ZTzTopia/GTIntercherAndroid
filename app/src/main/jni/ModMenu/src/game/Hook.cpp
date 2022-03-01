@@ -218,6 +218,18 @@ void OnConsoleMessage(VariantList *variant_list) {
     }
 }
 
+void onShowCaptcha(VariantList *variant_list) {
+    std::string captcha_dialog{ variant_list->Get(0).GetString() };
+    std::vector<std::string> string = utilities::utils::string_tokenize(captcha_dialog, "|");
+    std::string captcha_question{ string[17] };
+    std::vector<std::string> captcha_sum = utilities::utils::string_tokenize(captcha_question, "+");
+    int captcha_sum_1 = std::stoi(captcha_sum[0]);
+    int captcha_sum_2 = std::stoi(captcha_sum[1]);
+    int captcha_answer = captcha_sum_1 + captcha_sum_2;
+    LOGD("Captcha sum: %d", captcha_answer);
+    packet::sender::send_packet(NET_MESSAGE_GENERIC_TEXT, utilities::utils::string_format("action|dialog_return\ndialog_name|captcha_submit\ncaptcha_answer| %s", captcha_answer), g_peer);
+}
+
 void Init() {
     g_variant_list = new VariantDB{};
     g_variant_list->GetFunction("OnSpawn")->sig_function = [](VariantList *variant_list) {
@@ -236,6 +248,9 @@ void Init() {
     };
     g_variant_list->GetFunction("OnConsoleMessage")->sig_function = [](VariantList *variant_list) {
         return OnConsoleMessage(variant_list);
+    };
+    g_variant_list->GetFunction("onShowCaptcha")->sig_function = [](VariantList *variant_list) {
+        return onShowCaptcha(variant_list);
     };
 }
 
@@ -264,6 +279,9 @@ void ProcessTankUpdatePacket(GameUpdatePacket* game_update_packet) {
             }
             break;
         }
+        default:
+            LOGD("Unknown game packet type: %d", static_cast<int>(game_update_packet->packetType));
+            break;
     }
 }
 
@@ -306,6 +324,7 @@ void ENetClient_ProcessPacket_hook(void *thiz, ENetEvent *event) {
                 break;
             }
             default:
+                LOGD("Unknown packet type: %d", static_cast<int>(type));
                 break;
         }
     }
