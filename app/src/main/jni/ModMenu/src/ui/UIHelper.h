@@ -2,7 +2,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "GUIManager.h"
+#include "ImGuiWrapper.h"
 
 namespace ui {
     class UIHelper {

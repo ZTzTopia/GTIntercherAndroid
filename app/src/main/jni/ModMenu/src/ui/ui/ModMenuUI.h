@@ -1,5 +1,5 @@
 #pragma once
-#include "ui/GUIManager.h"
+#include "ui/ImGuiWrapper.h"
 #include "ui/UIView.h"
 
 namespace ui {

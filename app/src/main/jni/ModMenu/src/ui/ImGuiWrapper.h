@@ -5,10 +5,10 @@
 #include <backends/imgui_impl_opengl3.h>
 
 namespace ui {
-    class GUIManager {
+    class ImGuiWrapper {
     public:
-        GUIManager(ImVec2 display_size);
-        ~GUIManager();
+        ImGuiWrapper(ImVec2 display_size);
+        ~ImGuiWrapper();
 
         virtual void initialize();
         virtual void render();

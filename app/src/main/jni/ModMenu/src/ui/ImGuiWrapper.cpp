@@ -1,4 +1,4 @@
-#include "GUIManager.h"
+#include "ImGuiWrapper.h"
 #include "font/IconsMaterialDesign.h"
 #include "font/MaterialDesignData.h"
 #include "font/NotoSansData.h"
@@ -8,13 +8,13 @@
 #define MULT_Y	0.00092592592f 	// 1 / 1080
 
 namespace ui {
-    GUIManager::GUIManager(ImVec2 display_size)
+    ImGuiWrapper::ImGuiWrapper(ImVec2 display_size)
         : m_display_size(display_size),
         m_display_scale(ImVec2()),
         m_small_font(nullptr),
         m_bold_font(nullptr) {}
 
-    GUIManager::~GUIManager() {
+    ImGuiWrapper::~ImGuiWrapper() {
         LOGD("Destroying GUIManager");
 
         // Cleanup
@@ -22,7 +22,7 @@ namespace ui {
         ImGui::DestroyContext();
     }
 
-    void GUIManager::initialize() {
+    void ImGuiWrapper::initialize() {
         LOGD("Initializing GUIManager..");
 
         // Setup Dear Gui context
@@ -106,7 +106,7 @@ namespace ui {
         style.Colors[ImGuiCol_CheckMark] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
-    void GUIManager::render() {
+    void ImGuiWrapper::render() {
         // Start the Dear Gui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui::NewFrame();

@@ -8,8 +8,8 @@
 
 namespace ui {
     UI::UI(ImVec2 display_size)
-        : GUIManager(display_size),
-        m_clear_pos(true) {
+        : ImGuiWrapper(display_size),
+          m_clear_pos(true) {
         m_views.clear();
     }
 
@@ -22,14 +22,14 @@ namespace ui {
     void UI::initialize() {
         LOGD("Initializing UI..");
 
-        GUIManager::initialize();
+        ImGuiWrapper::initialize();
 
         m_views.push_back(new ModMenuUI(ImRect(64, 64, get_display_size().x / 2.0f, get_display_size().y / 1.5f), "ModMenu"));
         m_views.push_back(new LuaLogUI(ImRect(64, 64, get_display_size().x / 2.5f, get_display_size().y / 2.0f), "LuaLog", false));
     }
 
     void UI::render() {
-        GUIManager::render();
+        ImGuiWrapper::render();
 
         if (m_clear_pos) {
             ImGuiIO &io = ImGui::GetIO();

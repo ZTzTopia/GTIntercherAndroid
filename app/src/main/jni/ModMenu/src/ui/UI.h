@@ -1,11 +1,11 @@
 #pragma once
 #include <vector>
 
-#include "GUIManager.h"
+#include "ImGuiWrapper.h"
 #include "UIView.h"
 
 namespace ui {
-    class UI : public GUIManager {
+    class UI : public ImGuiWrapper {
     public:
         UI(ImVec2 display_size);
         ~UI();

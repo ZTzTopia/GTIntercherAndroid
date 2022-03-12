@@ -71,10 +71,7 @@ enum ePacketType {
 
 #pragma pack(push, 1)
 struct GameUpdatePacket {
-    uint8_t packetType; // 0
-    uint8_t unk0; // 1
-    uint8_t unk1; // 2
-    uint8_t unk2; // 3
+    ePacketType packetType; // 0
     uint32_t unk4; // 4
     uint32_t unk5; // 8
     uint32_t unk6; // 12

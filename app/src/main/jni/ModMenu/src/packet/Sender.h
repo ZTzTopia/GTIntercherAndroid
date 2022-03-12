@@ -12,7 +12,7 @@ namespace packet {
             if (peer) {
                 ENetPacket* packet = enet_packet_create(0, data.length() + 5, 1);
                 *(eNetMessageType*)packet->data = type;
-                memcpy(packet->data + 4, data.c_str(), data.length());
+                std::memcpy(packet->data + 4, data.c_str(), data.length());
 
                 packet->pad = 0;
                 peer->host->usingNewPacket = 1;
@@ -35,7 +35,7 @@ namespace packet {
         inline void send_packet_packet(ENetPacket* packet, ENetPeer *peer) {
             if (peer) {
                 ENetPacket* packetTwo = enet_packet_create(0, packet->dataLength, packet->flags);
-                memcpy(packetTwo->data, packet->data, packet->dataLength);
+                std::memcpy(packetTwo->data, packet->data, packet->dataLength);
 
                 packetTwo->pad = packet->pad;
                 peer->host->usingNewPacket = 1;
@@ -62,14 +62,10 @@ namespace packet {
 
                 ENetPacket* packet = enet_packet_create(0, length + 5, flags);
                 *(eNetMessageType*)packet->data = messageType;
-                memcpy(packet->data + 4, gameUpdatePacket, length);
+                std::memcpy(packet->data + 4, gameUpdatePacket, length);
 
                 if (messageType == NET_MESSAGE_GAME_PACKET && (gameUpdatePacket->unk6 & 8) != 0) {
-                    memcpy(packet->data + length + 4, extendedData, gameUpdatePacket->unk15);
-                    *(uint32_t*)(packet->data + length + gameUpdatePacket->unk15 + 4) = 0x21402e40;
-                }
-                else {
-                    *(uint32_t*)(packet->data + length + 4) = 0x21402e40;
+                    std::memcpy(packet->data + length + 4, extendedData, gameUpdatePacket->unk15);
                 }
 
                 packet->pad = 0;

@@ -18,7 +18,7 @@ namespace packet {
         }
 
         inline char* GetTextPointerFromPacket(ENetPacket* packet) {
-            memset(packet->data + packet->dataLength - 1, 0, 1);
+            std::memset(packet->data + packet->dataLength - 1, 0, 1);
             return (char*)(packet->data + 4);
         }
 
@@ -48,7 +48,11 @@ namespace packet {
         }
 
         inline uint8_t* GetExtendedDataPointerFromTankPacket(GameUpdatePacket* gameUpdatePacket) {
-            return reinterpret_cast<uint8_t*>(&gameUpdatePacket->dataExtended);
+            if ((gameUpdatePacket->unk6 & 8) != 0) {
+                return reinterpret_cast<uint8_t *>(&gameUpdatePacket->dataExtended);
+            }
+
+            return nullptr;
         }
     } // namespace PacketDecodee
 } // namespace Client
