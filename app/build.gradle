@@ -5,9 +5,9 @@ plugins {
 def ciBuild = System.getenv("CI") == "true"
 def ciRef = System.getenv("GITHUB_REF") ?: ""
 def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-def isReleaseBuild = ciBuild && ciRef.contains("master")
+def isReleaseBuild = ciBuild && ciRef.contains("master") || System.getenv("RELEASE") == "true"
 
-def version = "0.0.3"
+def version = "0.1.0"
 def versionDisplayName = "${version}"
 if (!isReleaseBuild) {
     versionDisplayName = "${version} Dev${ciBuild ? " (#${ciRunNumber})" : ""}"

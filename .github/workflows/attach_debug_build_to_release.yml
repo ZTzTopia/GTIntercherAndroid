@@ -1,0 +1,61 @@
+name: Debug Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - dev
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Restore Gradle cache
+        uses: actions/cache@v2.1.4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Restore Build cache
+        uses: actions/cache@v2.1.4
+        with:
+          path: |
+            app/build
+          key: ${{ runner.os }}-build-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-build-
+
+      - name: Build debug APK
+        shell: bash
+        run: |
+          exit_on_error() { 
+            echo "$1"; 
+            exit 1; 
+          }
+          
+          echo "Setting vars.."
+          APK_DIR_PATH="./app/build/outputs/apk/debug"
+          echo "APK_DIR_PATH=$APK_DIR_PATH" >> $GITHUB_ENV
+          
+          echo "Building APK.."
+          if ! ./gradlew assembleDebug; then
+            exit_on_error "Build failed."
+          fi
+          
+          APK_DIR_PATH_WITH_NAME="$(find "${APK_DIR_PATH}" -type f -name "*.apk")"
+          
+          if ! hub release edit \
+          -m "" \
+          -a "${APK_DIR_PATH_WITH_NAME}"; then
+              exit_on_error "Attach APKs to release failed for '$RELEASE_VERSION_NAME' release."
+          fi
