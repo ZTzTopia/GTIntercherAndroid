@@ -303,11 +303,11 @@ void ENetClient_ProcessPacket_hook(void *thiz, ENetEvent *event) {
             case NET_MESSAGE_GAME_PACKET: {
                 GameUpdatePacket *gameUpdatePacket = packet::decoder::GetStructPointerFromTankPacket(event->packet);
                 if (gameUpdatePacket) {
-                    LOGD("gameUpdatePacket type: %d", (int)gameUpdatePacket->packetType);
+                    /*LOGD("gameUpdatePacket type: %d", (int)gameUpdatePacket->packetType);
                     LOGD("unk0: %d, unk1: %d, unk2: %d, unk3: %d, unk5: %d", gameUpdatePacket->unk0, gameUpdatePacket->unk1, gameUpdatePacket->unk2, gameUpdatePacket->unk4, gameUpdatePacket->unk5);
                     LOGD("unk6: %d, unk7: %d, unk8: %d, unk9: %f, unk10: %f", gameUpdatePacket->unk6, gameUpdatePacket->unk7, gameUpdatePacket->unk8, gameUpdatePacket->unk9, gameUpdatePacket->unk10);
                     LOGD("unk11: %f, unk12: %f, unk13: %f, unk14: %d, unk15: %d", gameUpdatePacket->unk11, gameUpdatePacket->unk12, gameUpdatePacket->unk13, gameUpdatePacket->unk14, gameUpdatePacket->unk15);
-
+*/
                     ProcessTankUpdatePacket(gameUpdatePacket);
                 }
                 break;

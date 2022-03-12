@@ -46,7 +46,7 @@ jobs:
           echo "APK_DIR_PATH=$APK_DIR_PATH" >> $GITHUB_ENV
           
           echo "Building APK.."
-          if ! ./gradlew assembleDebug; then
+          if ! RELEASE=true ./gradlew assembleDebug; then
             exit_on_error "Build failed."
           fi
           
