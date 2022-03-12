@@ -1,4 +1,4 @@
-name: Debug Build
+name: Debug build
 
 on:
   pull_request:
