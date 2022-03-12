@@ -1,11 +1,9 @@
 name: Debug Build
 
 on:
-  pull_request:
-  push:
-    branches:
-      - master
-      - dev
+  release:
+    types:
+      - published
     
 jobs:
   build:
