@@ -1,4 +1,4 @@
-name: Debug Build
+name: Attach debug build to release
 
 on:
   release:
