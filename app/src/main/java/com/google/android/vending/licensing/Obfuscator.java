@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.vending.licensing;
+package com.google.android.vending.licensing;
 
 /**
  * Interface used as part of a {@link Policy} to allow application authors to obfuscate

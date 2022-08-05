@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.vending.licensing;
+package com.google.android.vending.licensing;
 
-import com.android.vending.licensing.util.Base64;
-import com.android.vending.licensing.util.Base64DecoderException;
+import com.google.android.vending.licensing.util.Base64;
+import com.google.android.vending.licensing.util.Base64DecoderException;
 
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;

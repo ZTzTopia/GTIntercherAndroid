@@ -40,6 +40,7 @@ import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -61,10 +62,10 @@ import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
-import com.android.vending.licensing.AESObfuscator;
-import com.android.vending.licensing.LicenseChecker;
-import com.android.vending.licensing.LicenseCheckerCallback;
-import com.android.vending.licensing.ServerManagedPolicy;
+import com.google.android.vending.licensing.AESObfuscator;
+import com.google.android.vending.licensing.LicenseChecker;
+import com.google.android.vending.licensing.LicenseCheckerCallback;
+import com.google.android.vending.licensing.ServerManagedPolicy;
 import com.anzu.sdk.Anzu;
 import com.gt.launcher.FloatingService;
 import com.gt.launcher.R;
@@ -1022,7 +1023,14 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             if (!inFloatingMode && !aleardyAtHome) {
                 Rect rect = new Rect();
                 getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
-                m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
+                // m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
+
+                // If the navigation gesture is enabled it will be at the bottom or
+                // if dpi >= 600 makes the navigation bar (not navigation gesture) down.
+                // So this fix the text input problem?
+                DisplayMetrics metrics = getResources().getDisplayMetrics();
+                m_KeyBoardHeight = metrics.heightPixels - rect.bottom;
+
                 if (m_KeyBoardHeight > 0 && !m_editText.isFocused()) {
                     showEditTextBox(true);
                 }

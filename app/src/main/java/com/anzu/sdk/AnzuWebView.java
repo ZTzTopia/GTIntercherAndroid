@@ -29,8 +29,8 @@ public class AnzuWebView extends WebView {
         }
 
         getSettings().setJavaScriptEnabled(true);
-        getSettings().setAppCachePath(context.getCacheDir().getPath());
-        getSettings().setAppCacheEnabled(true);
+//        getSettings().setAppCachePath(context.getCacheDir().getPath());
+//        getSettings().setAppCacheEnabled(true);
         getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
         getSettings().setGeolocationEnabled(false);
         getSettings().setSaveFormData(false);

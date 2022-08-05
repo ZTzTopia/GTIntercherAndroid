@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.gt.launcher">
 
-    <!-- A fix for android 11 queries package name. -->
+    <!-- A fix for android 11+ queries package name. -->
     <queries>
         <package android:name="com.rtsoft.growtopia" />
     </queries>

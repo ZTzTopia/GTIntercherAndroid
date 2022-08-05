@@ -10,6 +10,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url "https://sdk.tapjoy.com/"
+        }
     }
 }
 rootProject.name = "GTLauncherAndroid"

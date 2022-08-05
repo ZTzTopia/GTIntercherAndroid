@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.vending.licensing;
+package com.google.android.vending.licensing;
 
 /**
  * A DeviceLimiter that doesn't limit the number of devices that can use a

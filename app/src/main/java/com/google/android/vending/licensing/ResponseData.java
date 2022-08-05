@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.vending.licensing;
+package com.google.android.vending.licensing;
 
 import java.util.regex.Pattern;
 

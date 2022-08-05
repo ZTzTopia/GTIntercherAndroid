@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.vending.licensing;
+package com.google.android.vending.licensing;
 
 /**
  * Policy used by {@link LicenseChecker} to determine whether a user should have

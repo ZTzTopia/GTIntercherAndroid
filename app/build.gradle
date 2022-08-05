@@ -3,25 +3,19 @@ plugins {
 }
 
 android {
-    compileSdk 31
-    buildToolsVersion "31.0.0"
+    compileSdk 33
+    buildToolsVersion '33.0.0'
 
     defaultConfig {
         applicationId "com.gt.launcher"
-        minSdk 16
-        targetSdk 31
-        versionCode 3
-        versionName "0.0.3"
+        minSdk 19
+        targetSdk 33
+        versionCode 10
+        versionName "0.1.0"
         multiDexEnabled true
 
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
-        }
-
-        externalNativeBuild {
-            ndkBuild {
-                arguments getProcessesCountArg()
-            }
         }
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -64,8 +58,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
 
-    implementation 'androidx.appcompat:appcompat:1.4.0'
-    // implementation 'com.google.android.material:material:1.4.0'
+    implementation 'androidx.appcompat:appcompat:1.4.2'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
@@ -80,16 +73,5 @@ dependencies {
     implementation 'com.google.android.gms:play-services-drive:17.0.0'
     implementation 'com.google.android.gms:play-services-ads:20.5.0'
     implementation 'com.google.firebase:firebase-appindexing:20.0.0'
-}
-
-def getProcessesCountArg() {
-    def procCount = Runtime.runtime.availableProcessors()
-
-    Gradle gradle = getGradle()
-    def isClean = gradle.getStartParameter().getTaskNames().find { it ==~ /.*clean.*/ }
-    if (isClean) {
-        procCount = 1
-    }
-
-    return "-j" + procCount
+    implementation 'com.tapjoy:tapjoy-android-sdk:12.10.0'
 }
