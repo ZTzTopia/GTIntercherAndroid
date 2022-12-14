@@ -1,4 +1,4 @@
-# GTInternalAndroid
+# GTLauncherAndroid
 **GTLauncherAndroid** is a [Growtopia](https://www.growtopiagame.com/) launcher LiKE nO oThER. Without having to update the launcher if the game is updated.
 
 ## Supported Version
