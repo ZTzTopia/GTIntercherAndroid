@@ -2,7 +2,7 @@
 **GTLauncherAndroid** is a [Growtopia](https://www.growtopiagame.com/) launcher LiKE nO oThER. Without having to update the launcher if the game is updated.
 
 ## Supported Version
-Android 7.0 Nougat (SDK 24) ~ 13 Tiramisu (SDK 33)
+Android 5.0 Lollipop (SDK 21) ~ 13 Tiramisu (SDK 33)
 
 ## Features
 - Free and open source.
