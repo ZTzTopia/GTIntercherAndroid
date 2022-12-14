@@ -3,7 +3,6 @@ package com.rtsoft.growtopia;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
@@ -35,9 +34,7 @@ class CSTSWebView extends WebView {
             getSettings().setJavaScriptEnabled(true);
             getSettings().setDomStorageEnabled(true);
             clearCache(true);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
-            }
+            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
         }
     }
 
