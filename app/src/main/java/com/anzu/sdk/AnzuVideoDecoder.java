@@ -16,8 +16,6 @@ import android.os.Build;
 import android.util.Log;
 import android.view.Surface;
 
-import com.google.android.gms.gcm.Task;
-import com.google.android.gms.search.SearchAuth;
 import com.tapjoy.TJAdUnitConstants;
 import com.tapjoy.TapjoyConstants;
 
@@ -30,7 +28,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class AnzuVideoDecoder {
-    final int TIMEOUT_USEC = SearchAuth.StatusCodes.AUTH_DISABLED;
+    final int TIMEOUT_USEC = 10000;
     private long accumulatedPauseTime = 0;
     private MediaCodec audioDecoder = null;
     private final Object audioDecoderLock = new Object();
@@ -380,7 +378,7 @@ public class AnzuVideoDecoder {
                 GLES20.glBindTexture(36197, i);
                 checkGlError("glBindTexture mTextureID");
                 GLES20.glTexParameterf(36197, 10241, 9728.0f);
-                GLES20.glTexParameterf(36197, Task.EXTRAS_LIMIT_BYTES, 9729.0f);
+                GLES20.glTexParameterf(36197, 10240, 9729.0f);
                 GLES20.glTexParameteri(36197, 10242, 33071);
                 GLES20.glTexParameteri(36197, 10243, 33071);
                 checkGlError("glTexParameter");

@@ -4,7 +4,7 @@ plugins {
 
 android {
     compileSdk 33
-    buildToolsVersion '33.0.0'
+    namespace "com.gt.launcher"
 
     defaultConfig {
         applicationId "com.gt.launcher"
@@ -12,28 +12,25 @@ android {
         targetSdk 33
         versionCode 10
         versionName "0.1.0"
-        multiDexEnabled true
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             //noinspection ChromeOsAbiSupport
             abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_shared'
+            }
+        }
     }
 
     buildTypes {
-        debug {
-            minifyEnabled false
-            shrinkResources false
-            zipAlignEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
         release {
             minifyEnabled true
-            shrinkResources true
-            zipAlignEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -42,16 +39,9 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
 
-    sourceSets {
-        main {
-            jniLibs.srcDir 'src/main/jniLibs'
-            aidl.srcDirs 'src/main/java'
-        }
-    }
-
     externalNativeBuild {
-        ndkBuild {
-            path 'src/main/jni/Android.mk'
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
         }
     }
 }
@@ -66,11 +56,9 @@ dependencies {
     // Needed by Growtopia
     implementation 'org.jbundle.util.osgi.wrapped:org.jbundle.util.osgi.wrapped.org.apache.http.client:4.1.2'
     implementation 'com.appsflyer:af-android-sdk:6.9.4'
+    implementation 'com.android.installreferrer:installreferrer:2.2'
+    implementation 'com.miui.referrer:homereferrer:1.0.0.6'
     implementation 'com.android.billingclient:billing:5.1.0'
     implementation 'com.google.android.gms:play-services-base:18.1.0'
-    implementation 'com.google.android.gms:play-services-gcm:17.0.0'
-    implementation 'com.google.android.gms:play-services-drive:17.0.0'
-    implementation 'com.google.android.gms:play-services-ads:21.3.0'
-    implementation 'com.google.firebase:firebase-appindexing:20.0.0'
     implementation 'com.tapjoy:tapjoy-android-sdk:12.10.0'
 }

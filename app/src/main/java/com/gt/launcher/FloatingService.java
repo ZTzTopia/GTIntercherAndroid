@@ -23,11 +23,41 @@ import com.rtsoft.growtopia.AppRenderer;
 import com.rtsoft.growtopia.SharedActivity;
 
 public class FloatingService extends Service {
-    public static FloatingService   mFloatingService;
-    public static FrameLayout       mFrameLayout;
-    public static View              mFloatingWindow;
-    public static WindowManager     mWindowManager;
-    public static RelativeLayout    mFloatingWindowContent;
+    public static FloatingService mFloatingService;
+    public static FrameLayout mFrameLayout;
+    public static View mFloatingWindow;
+    public static WindowManager mWindowManager;
+    public static RelativeLayout mFloatingWindowContent;
+    private static int initialX = 0;
+    private static int initialY = 0;
+    private static float initialTouchX = 0;
+    private static float initialTouchY = 0;
+
+    public static void updateViewLayout(MotionEvent event) {
+        if (mFrameLayout == null || mFloatingWindow.getVisibility() != View.VISIBLE) {
+            return;
+        }
+
+        WindowManager.LayoutParams params = (WindowManager.LayoutParams) mFrameLayout.getLayoutParams();
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                initialX = params.x;
+                initialY = params.y;
+                initialTouchX = event.getRawX();
+                initialTouchY = event.getRawY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                params.x = initialX + (int) (event.getRawX() - initialTouchX);
+                params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                mWindowManager.updateViewLayout(mFrameLayout, params);
+                break;
+            default:
+                break;
+        }
+
+        // We need to close the keyboard when the floating window is clicked.
+        mFloatingService.updateWindowManagerParams(false, true, true);
+    }
 
     @Nullable
     @Override
@@ -62,16 +92,16 @@ public class FloatingService extends Service {
 
         // Button to start floating window.
         ImageView imageView = new ImageView(this);
-        imageView.setLayoutParams(new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT));
+        imageView.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
+        ));
         imageView.setVisibility(View.VISIBLE);
         imageView.setAlpha(0.75f);
 
-        int applyDimension = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                32,
-                getResources().getDisplayMetrics());
+        int applyDimension = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+            32,
+            getResources().getDisplayMetrics()
+        );
         imageView.getLayoutParams().height = applyDimension;
         imageView.getLayoutParams().width = applyDimension;
 
@@ -96,7 +126,7 @@ public class FloatingService extends Service {
                     mWindowManager.removeView(mFrameLayout);
                 }
 
-                AppRenderer.finishApp();
+                // AppRenderer.finishApp();
             }
         });
 
@@ -104,13 +134,12 @@ public class FloatingService extends Service {
         mFrameLayout.addView(imageView);
 
         // Set floating window params.
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                applyDimension,
-                applyDimension,
-                Build.VERSION.SDK_INT < Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_PHONE :
-                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT);
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(applyDimension,
+            applyDimension,
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_PHONE : WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        );
 
         params.gravity = Gravity.TOP | Gravity.START;
         params.x = 16; // Initial Position of window
@@ -164,8 +193,7 @@ public class FloatingService extends Service {
 
                 SharedActivity.app.aleardyAtHome = true;
             }
-        }
-        else {
+        } else {
             // Hide the floating window.
             updateWindowManagerParams(true, false, false);
             mFloatingWindow.setVisibility(View.GONE);
@@ -194,19 +222,19 @@ public class FloatingService extends Service {
 
         if (!z) {
             if (show) {
-                int applyDimension = (int) TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        32,
-                        getResources().getDisplayMetrics());
+                int applyDimension = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                    32,
+                    getResources().getDisplayMetrics()
+                );
 
                 params.x = 16; // Reset Position of window
                 params.y = 16; // Reset Position of window
                 params.width = applyDimension;
                 params.height = applyDimension;
-            }
-            else {
+            } else {
                 // Calculate the size of floating window.
-                DisplayMetrics displayMetrics = getApplicationContext().getResources().getDisplayMetrics();
+                DisplayMetrics displayMetrics = getApplicationContext().getResources()
+                    .getDisplayMetrics();
                 int widthPixels = displayMetrics.widthPixels;
                 int heightPixels = displayMetrics.heightPixels;
                 if (widthPixels < heightPixels) {
@@ -227,42 +255,10 @@ public class FloatingService extends Service {
         if (canShowKeyboard) {
             params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
             params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE;
-        }
-        else {
+        } else {
             params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         }
 
         mWindowManager.updateViewLayout(mFrameLayout, params);
-    }
-
-    private static int initialX = 0;
-    private static int initialY = 0;
-    private static float initialTouchX = 0;
-    private static float initialTouchY = 0;
-
-    public static void updateViewLayout(MotionEvent event) {
-        if (mFrameLayout == null || mFloatingWindow.getVisibility() != View.VISIBLE) {
-            return;
-        }
-
-        WindowManager.LayoutParams params = (WindowManager.LayoutParams) mFrameLayout.getLayoutParams();
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                initialX = params.x;
-                initialY = params.y;
-                initialTouchX = event.getRawX();
-                initialTouchY = event.getRawY();
-                break;
-            case MotionEvent.ACTION_MOVE:
-                params.x = initialX + (int) (event.getRawX() - initialTouchX);
-                params.y = initialY + (int) (event.getRawY() - initialTouchY);
-                mWindowManager.updateViewLayout(mFrameLayout, params);
-                break;
-            default:
-                break;
-        }
-
-        // We need to close the keyboard when the floating window is clicked.
-        mFloatingService.updateWindowManagerParams(false, true, true);
     }
 }

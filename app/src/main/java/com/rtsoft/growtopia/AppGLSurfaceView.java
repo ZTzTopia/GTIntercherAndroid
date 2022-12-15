@@ -1,14 +1,16 @@
 package com.rtsoft.growtopia;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
 
-import com.gt.launcher.FloatingService;
-
 class AppGLSurfaceView extends GLSurfaceView {
+    private static boolean mMultiTouchClassAvailable;
+    public SharedActivity app;
     boolean rendererSet;
+    AppRenderer mRenderer;
 
     public AppGLSurfaceView(Context context) {
         super(context);
@@ -40,14 +42,19 @@ class AppGLSurfaceView extends GLSurfaceView {
         try {
             WrapSharedMultiTouchInput.checkAvailable(app);
             mMultiTouchClassAvailable = true;
-        }
-        catch (Throwable th) {
+        } catch (Throwable th) {
             mMultiTouchClassAvailable = false;
         }
     }
 
+    public static native void nativeOnTouch(int action, float x, float y, int finger);
+
+    private static native void nativePause();
+
+    private static native void nativeResume();
+
     public void onPause() {
-        // super.onPause(); // Something is wrong with this line. - ZTz
+        // super.onPause();
         if (!SharedActivity.bIsShuttingDown) {
             nativePause();
         }
@@ -68,10 +75,8 @@ class AppGLSurfaceView extends GLSurfaceView {
 
     public synchronized boolean onTouchEvent(MotionEvent motionEvent) {
         if (app.is_demo) {
-            app.showDialog(0);
+            new Dialog(app).dismiss();
         }
-
-        FloatingService.updateViewLayout(motionEvent);
 
         if (mMultiTouchClassAvailable) {
             return WrapSharedMultiTouchInput.OnInput(motionEvent);
@@ -82,12 +87,4 @@ class AppGLSurfaceView extends GLSurfaceView {
         performClick();
         return true;
     }
-
-    AppRenderer mRenderer;
-
-    public static native void nativeOnTouch(int action, float x, float y, int finger);
-    private static native void nativePause();
-    private static native void nativeResume();
-    public SharedActivity app;
-    private static boolean mMultiTouchClassAvailable;
 }

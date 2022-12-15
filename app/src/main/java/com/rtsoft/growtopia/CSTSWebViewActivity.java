@@ -8,9 +8,11 @@ import android.util.Log;
 import android.widget.FrameLayout;
 
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-public class CSTSWebViewActivity extends Activity implements CSTSWebViewClient.CSTSWebViewClientCallback {
+public class CSTSWebViewActivity extends Activity implements
+    CSTSWebViewClient.CSTSWebViewClientCallback {
     private String _initialURL;
     private CSTSWebView _webView;
 
@@ -36,13 +38,8 @@ public class CSTSWebViewActivity extends Activity implements CSTSWebViewClient.C
             String ingameplayerid = intent.getStringExtra("ingameplayerid");
             String environment = intent.getStringExtra("environment");
             String misc = intent.getStringExtra("misc");
-            String str = (environment.equals("PROD") ? "https://csts-mob.ubi.com/index.php" : "https://dev-csts-mob.ubi.com/index.php") +
-                    "?cstsuid=" + cstsuid +
-                    "&platform=android&language=" + language +
-                    "&country=" + country +
-                    "&iap=" + payer +
-                    "&igpid=" + ingameplayerid +
-                    "&device=" + urlencode(getDeviceInfos());
+            String str = (environment.equals("PROD") ? "https://csts-mob.ubi.com/index.php" : "https://dev-csts-mob.ubi.com/index.php") + "?cstsuid=" + cstsuid + "&platform=android&language=" + language + "&country=" + country + "&iap=" + payer + "&igpid=" + ingameplayerid + "&device=" + urlencode(
+                getDeviceInfos());
             if (misc != null) {
                 if (!misc.equals("")) {
                     str += "&misc=" + urlencode(misc);
@@ -68,8 +65,7 @@ public class CSTSWebViewActivity extends Activity implements CSTSWebViewClient.C
     public void onBackPressed() {
         if (_webView.canGoBack()) {
             _webView.goBack();
-        }
-        else {
+        } else {
             super.onBackPressed();
         }
     }
@@ -100,10 +96,11 @@ public class CSTSWebViewActivity extends Activity implements CSTSWebViewClient.C
     public String urlencode(String str) {
         String str2 = str;
         try {
-            str2 = URLEncoder.encode(str2, "utf-8");
-        }
-        catch (Exception e) {
-            Log.e("cstslog", "CSTS_urlencode" + e.getMessage() + Arrays.toString(e.getStackTrace()));
+            str2 = URLEncoder.encode(str2, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            Log.e("cstslog",
+                "CSTS_urlencode" + e.getMessage() + Arrays.toString(e.getStackTrace())
+            );
         }
         return str2;
     }

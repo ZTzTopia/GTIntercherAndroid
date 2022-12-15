@@ -9,40 +9,38 @@ import android.os.Bundle;
 import android.text.Html;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
-import com.google.android.gms.drive.DriveFile;
-
 public class PermissionActivity extends Activity {
+    public static Activity mainActivity;
     private static PermissionActivity _pa;
     private static boolean isActive;
-    public static Activity mainActivity;
     int checkPermissionIteration;
     String[] requestablePermissions;
     String[][] requiredPermissions;
     boolean shouldRequestForPermissions = false;
 
     public PermissionActivity() {
-        String[][] strArr = {
-                new String[] {
-                        "android.permission.WRITE_EXTERNAL_STORAGE",
-                        "Storage",
-                        "The game needs this permission to write your progress to the device. The game cannot run without this permission."
-                }/*,
-                new String[] {
-                        "android.permission.VIBRATE",
-                        "Vibrate",
-                        "The game needs this permission to write your progress to the device. The game cannot run without this permission."
-                },
-                new String[] {
-                        "android.permission.ACCESS_FINE_LOCATION",
-                        "Access fine location",
-                        "The game needs this permission to write your progress to the device. The game cannot run without this permission."
-                }*/
+        String[][] permissions = {
+            new String[]{
+                "android.permission.WRITE_EXTERNAL_STORAGE",
+                "Storage",
+                "The game needs this permission to write your progress to the device. The game cannot run without this permission."
+            }/*,
+            new String[] {
+                "android.permission.VIBRATE",
+                "Vibrate",
+                "The game needs this permission to write your progress to the device. The game cannot run without this permission."
+            },
+            new String[] {
+                "android.permission.ACCESS_FINE_LOCATION",
+                "Access fine location",
+                "The game needs this permission to write your progress to the device. The game cannot run without this permission."
+            }*/
         };
-        requiredPermissions = strArr;
-        requestablePermissions = new String[strArr.length];
+
+        requiredPermissions = permissions;
+        requestablePermissions = new String[permissions.length];
         checkPermissionIteration = 0;
     }
 
@@ -51,12 +49,13 @@ public class PermissionActivity extends Activity {
         if (isActive) {
             Log.d("PermissionActivity", "Active: Finishing.");
             finish();
-        }
-        else if (Build.VERSION.SDK_INT < 23) {
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Log.d("PermissionActivity", "API Higher: Finishing.");
+            finish();
+        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             Log.d("PermissionActivity", "API Lower: Finishing.");
             finish();
-        }
-        else {
+        } else {
             Log.d("PermissionActivity", "Checking Permissions.");
             _pa = this;
             isActive = true;
@@ -64,10 +63,12 @@ public class PermissionActivity extends Activity {
         }
     }
 
+    @Override
     protected void onStart() {
         super.onStart();
     }
 
+    @Override
     protected void onStop() {
         super.onStop();
     }
@@ -75,14 +76,22 @@ public class PermissionActivity extends Activity {
     private void checkPermissions() {
         checkPermissionIteration++;
         if (checkPermissionIteration >= 3) {
-            permissionPopup("Growtopia Shutting Down", "Sorry Growtopia can not be played without these permissions.", true, true);
+            permissionPopup(
+                "Growtopia Shutting Down",
+                "Sorry Growtopia can not be played without these permissions.",
+                true,
+                true
+            );
         }
 
         shouldRequestForPermissions = false;
         String str = "";
         boolean z = false;
         for (int i2 = 0; i2 < requiredPermissions.length; i2++) {
-            if (ActivityCompat.checkSelfPermission(getApplicationContext(), requiredPermissions[i2][0]) == -1) {
+            if (ActivityCompat.checkSelfPermission(
+                getApplicationContext(),
+                requiredPermissions[i2][0]
+            ) == -1) {
                 String[] strArr = requestablePermissions;
                 String[][] strArr2 = requiredPermissions;
                 strArr[i2] = strArr2[i2][0];
@@ -103,17 +112,18 @@ public class PermissionActivity extends Activity {
             finish();
         }
 
-        boolean z2 = shouldRequestForPermissions;
-        if (z2 && checkPermissionIteration == 1) {
+        if (shouldRequestForPermissions && checkPermissionIteration == 1) {
             ActivityCompat.requestPermissions(this, requestablePermissions, 100);
-        } else if (z2 && checkPermissionIteration == 2) {
+        } else if (shouldRequestForPermissions && checkPermissionIteration == 2) {
             permissionPopup("Permission Required", str, z, false);
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void permissionPopup(String str, String str2, boolean z, final boolean z2) {
-        AlertDialog create = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).create();
+        AlertDialog create = new AlertDialog.Builder(
+            this,
+            android.R.style.Theme_Material_Dialog_Alert
+        ).create();
         String str3 = str2;
         if (z) {
             str3 = str2 + " You can enable missing permissions in the permission section of the application settings.";
@@ -125,8 +135,14 @@ public class PermissionActivity extends Activity {
 
         if (z) {
             create.setButton(-3, "Settings", (dialogInterface, i) -> {
-                Intent intent = new Intent("android.settings.APPLICATION_DETAILS_SETTINGS", Uri.fromParts("package", PermissionActivity.this.getApplicationContext().getPackageName(), null));
-                intent.addFlags(DriveFile.MODE_READ_ONLY);
+                Intent intent = new Intent(
+                    "android.settings.APPLICATION_DETAILS_SETTINGS",
+                    Uri.fromParts("package",
+                        PermissionActivity.this.getApplicationContext().getPackageName(),
+                        null
+                    )
+                );
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 PermissionActivity.this.getApplicationContext().startActivity(intent);
                 if (PermissionActivity.mainActivity != null) {
                     PermissionActivity.mainActivity.finish();
@@ -141,7 +157,11 @@ public class PermissionActivity extends Activity {
             if (!z2) {
                 dialogInterface.cancel();
                 Log.d("PermissionActivity", "Requesting Permissions Again.");
-                ActivityCompat.requestPermissions(PermissionActivity._pa, PermissionActivity.this.requestablePermissions, 100);
+                ActivityCompat.requestPermissions(
+                    PermissionActivity._pa,
+                    PermissionActivity.this.requestablePermissions,
+                    100
+                );
             } else if (PermissionActivity.mainActivity != null) {
                 PermissionActivity.mainActivity.finish();
                 PermissionActivity.mainActivity = null;

@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
+import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.Sensor;
@@ -40,7 +41,6 @@ import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -54,19 +54,15 @@ import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 
 import com.android.billingclient.api.BillingClient;
-import com.android.billingclient.api.BillingClientStateListener;
-import com.android.billingclient.api.BillingResult;
-import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
+import com.anzu.sdk.Anzu;
 import com.google.android.vending.licensing.AESObfuscator;
 import com.google.android.vending.licensing.LicenseChecker;
 import com.google.android.vending.licensing.LicenseCheckerCallback;
 import com.google.android.vending.licensing.ServerManagedPolicy;
-import com.anzu.sdk.Anzu;
 import com.gt.launcher.FloatingService;
 import com.gt.launcher.R;
 import com.tapjoy.TJActionRequest;
@@ -87,39 +83,117 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class SharedActivity extends Activity implements SensorEventListener, TJGetCurrencyBalanceListener, TJPlacementVideoListener {
+public class SharedActivity extends Activity implements SensorEventListener,
+    TJGetCurrencyBalanceListener, TJPlacementVideoListener {
+    //************************************************************************
+    static final int RC_REQUEST = 10001;
+    // From MessageManager.h
+    final static int VIRTUAL_KEY_BACK = 500000;
+    final static int VIRTUAL_KEY_PROPERTIES = 500001;
+    final static int VIRTUAL_KEY_HOME = 500002;
+    final static int VIRTUAL_KEY_SEARCH = 500003;
+    final static int VIRTUAL_KEY_DIR_UP = 500004;
+    final static int VIRTUAL_KEY_DIR_DOWN = 500005;
+    final static int VIRTUAL_KEY_DIR_LEFT = 500006;
+    final static int VIRTUAL_KEY_DIR_RIGHT = 500007;
+    final static int VIRTUAL_KEY_DIR_CENTER = 500008;
+    final static int VIRTUAL_KEY_VOLUME_UP = 500009;
+    final static int VIRTUAL_KEY_VOLUME_DOWN = 500010;
+    final static int VIRTUAL_KEY_SHIFT = 500011;
+    final static int VIRTUAL_KEY_TRACKBALL_DOWN = 500035;
+    final static int VIRTUAL_DPAD_BUTTON_LEFT = 500036; //square on xperia
+    final static int VIRTUAL_DPAD_BUTTON_UP = 500037; //triangle on xperia
+    final static int VIRTUAL_DPAD_BUTTON_RIGHT = 500038; //O
+    final static int VIRTUAL_DPAD_BUTTON_DOWN = 500039; //X
+    final static int VIRTUAL_DPAD_SELECT = 500040;
+    final static int VIRTUAL_DPAD_START = 500041;
+    final static int VIRTUAL_DPAD_LBUTTON = 500042;
+    final static int VIRTUAL_DPAD_RBUTTON = 500043;
+    // Messages we could call on Proton using nativeSendGUIEx:
+    final static int MESSAGE_TYPE_GUI_CLICK_START = 0;
+    final static int MESSAGE_TYPE_GUI_CLICK_END = 1;
+    final static int MESSAGE_TYPE_GUI_CLICK_MOVE = 2; // Only send when button/finger is held down
+    final static int MESSAGE_TYPE_GUI_CLICK_MOVE_RAW = 3; // Win only, the raw mouse move messages
+    final static int MESSAGE_TYPE_GUI_ACCELEROMETER = 4;
+    final static int MESSAGE_TYPE_GUI_TRACKBALL = 5;
+    final static int MESSAGE_TYPE_GUI_CHAR = 6; // The input box uses it on windows since we don't have a virtual keyboard
+    static final int MESSAGE_TYPE_GUI_KEYBWD_CURSORPOS = 8;
+    static final int MESSAGE_TYPE_GUI_KEYBWD_STRING = 7;
+    final static int MESSAGE_TYPE_GUI_COPY = 9;
+    final static int MESSAGE_TYPE_GUI_PASTE = 10;
+    final static int MESSAGE_TYPE_GUI_TOGGLE_FULLSCREEN = 11;
+    final static int MESSAGE_TYPE_SET_ENTITY_VARIANT = 12;
+    final static int MESSAGE_TYPE_CALL_ENTITY_FUNCTION = 13;
+    final static int MESSAGE_TYPE_CALL_COMPONENT_FUNCTION_BY_NAME = 14;
+    final static int MESSAGE_TYPE_PLAY_SOUND = 15;
+    final static int MESSAGE_TYPE_VIBRATE = 16;
+    final static int MESSAGE_TYPE_REMOVE_COMPONENT = 17;
+    final static int MESSAGE_TYPE_ADD_COMPONENT = 18;
+    final static int MESSAGE_TYPE_OS_CONNECTION_CHECKED = 19; // Sent by macOS, will send an eOSSTreamEvent as parm1
+    final static int MESSAGE_TYPE_PLAY_MUSIC = 20;
+    final static int MESSAGE_TYPE_UNKNOWN = 21;
+    final static int MESSAGE_TYPE_PRELOAD_SOUND = 22;
+    final static int MESSAGE_TYPE_GUI_CHAR_RAW = 23;
+    final static int MESSAGE_TYPE_SET_SOUND_ENABLED = 24;
+    // Some tapjoy stuff
+    final static int MESSAGE_TYPE_TAPJOY_AD_READY = 25;
+    final static int MESSAGE_TYPE_TAPJOY_FEATURED_APP_READY = 26;
+    final static int MESSAGE_TYPE_TAPJOY_MOVIE_AD_READY = 27;
+    // GOOGLE BILLING
+    final static int MESSAGE_TYPE_IAP_RESULT = 28;
+    final static int MESSAGE_TYPE_IAP_ITEM_STATE = 29;
+
+    ////////////////////////////////////////////////////////////////////////////
+    final static int MESSAGE_TYPE_IAP_ITEM_INFO_RESULT = 54;
+    // More tapjoy stuff
+    final static int MESSAGE_TYPE_TAPJOY_TAP_POINTS_RETURN = 30;
+    final static int MESSAGE_TYPE_TAPJOY_TAP_POINTS_RETURN_ERROR = 31;
+    final static int MESSAGE_TYPE_TAPJOY_SPEND_TAP_POINTS_RETURN = 32;
+    final static int MESSAGE_TYPE_TAPJOY_SPEND_TAP_POINTS_RETURN_ERROR = 33;
+    final static int MESSAGE_TYPE_TAPJOY_AWARD_TAP_POINTS_RETURN = 34;
+    final static int MESSAGE_TYPE_TAPJOY_AWARD_TAP_POINTS_RETURN_ERROR = 35;
+    final static int MESSAGE_TYPE_TAPJOY_EARNED_TAP_POINTS = 36;
+    final static int MESSAGE_TYPE_GUI_JOYPAD_BUTTONS = 37; // For Jake's android gamepad input
+    final static int MESSAGE_TYPE_GUI_JOYPAD = 38; // For Jake's android gamepad input
+    final static int MESSAGE_TYPE_GUI_JOYPAD_CONNECT = 39; // For Jakes android gamepad input
+    final static int MESSAGE_TYPE_CALL_ENTITY_FUNCTION_RECURSIVELY = 40; // Used to schedule fake clicks, helps me with debugging
+    final static int MESSAGE_TYPE_HW_TOUCH_KEYBOARD_WILL_SHOW = 41; // Ios only, when not using external keyboard
+    final static int MESSAGE_TYPE_HW_TOUCH_KEYBOARD_WILL_HIDE = 42; // Ios only, when not using external keyboard
+    final static int MESSAGE_TYPE_HW_KEYBOARD_INPUT_ENDING = 43; // Proton is done with input and requesting that the keyboard hid
+    final static int MESSAGE_TYPE_HW_KEYBOARD_INPUT_STARTING = 44; // Proton is asking for the keyboard to open
+    // GOOGLE BILLING again
+    final static int MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE = 45; // For sending back lists of items we've already purchased
+    final static int MESSAGE_TYPE_CALL_STATIC_FUNCTION = 46; // Use by other platforms, but this value needs to be reserved by those platforms.
+    // for sending through version values
+    final static int MESSAGE_TYPE_APP_VERSION = 47;
+    final static int MESSAGE_USER = 1000; // Send your own messages after this #
+    // IAP RESPONSE CODES for Proton
+    final static int RESULT_OK = 0;
+    final static int RESULT_USER_CANCELED = 1;
+    final static int RESULT_SERVICE_UNAVAILABLE = 2;
+    final static int RESULT_BILLING_UNAVAILABLE = 3;
+    final static int RESULT_ITEM_UNAVAILABLE = 4;
+    final static int RESULT_DEVELOPER_ERROR = 5;
+    final static int RESULT_ERROR = 6;
+    final static int RESULT_OK_ALREADY_PURCHASED = 7;
     //********** THESE WILL BE OVERRIDDEN IN YOUR Main.java file **************
     public static String PackageName = "com.rtsoft.something";
     public static String dllname = "rtsomething";
     public static boolean securityEnabled = false; // If false, it won't try to use the online license stuff
     public static boolean bIsShuttingDown = false;
     public static boolean IAPEnabled = false; // If false, IAB won't be initted.  I call it IAP because I'm used to it from iOS land
-
     public static String tapBannerSize = ""; // Tapjoy banner size text, set in Main.cpp, or by AdManager calls
     public static int adBannerWidth = 0;
     public static int adBannerHeight = 0;
-
     public static String m_advertiserID = ""; // Only will be set it Google Services is added to the project.   This is a big hassle for Proton projects,
     // I ended up just copying over the res and jar manually because android.library.reference.1= in project.properties didn't seem to let the manifest access the .res and.. argh.
     public static boolean m_limitAdTracking = false;
-
     public static boolean m_focusOnKeyboard = false;
     public static boolean m_focusOffKeyboard = false;
     public static boolean m_canShowCustomKeyboard = true;
-
     public static boolean HookedEnabled = false;
-    //************************************************************************
-    static final int RC_REQUEST = 10001;
-
     public static SharedActivity app = null; // A global to use in static functions with JNI
-
-    // For the accelerometer
-    private static float accelHzSave = 0;
-    private static Sensor sensor;
-    private static SensorManager sensorManager;
-    private static float m_lastMusicVol = 1;
     public static int apiVersion;
-
     // TAPJOY
     public static View adView;
     public static RelativeLayout adLinearLayout;
@@ -130,91 +204,571 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     public static boolean update_display_ad;
     public static boolean run_hooked;
     public static int tapjoy_ad_show; // 0 for don't shot, 1 for show
+    public static boolean set_allow_dimming_asap = false;
+    public static boolean set_disallow_dimming_asap = false;
+    public static boolean isKeyboardExist = false;
+    public static int m_KeyBoardHeight = 0;
+    public static Button m_CancelButton = null;
+    public static Button m_DoneButton = null;
+    public static RelativeLayout m_editTextRoot = null;
+    public static int maxLength = -1;
+    public static int tempNum = 0;
+    public static boolean updateText = false;
+    public static boolean usingGoogleBilling = false;
+    public static boolean passwordField = false;
+    // For the accelerometer
+    private static float accelHzSave = 0;
+    private static Sensor sensor;
+    private static SensorManager sensorManager;
+    private static float m_lastMusicVol = 1;
+    public final Handler mMainThreadHandler = new Handler();
     public TJPlacement offerwallPlacement;
     public PurchasesUpdatedListener purchaseUpdateListener;
     public ConcurrentHashMap<String, com.android.billingclient.api.Purchase> purchasedList = new ConcurrentHashMap<>();
     public TJPlacement tapjoyAdPlacementForSub01;
     public TJPlacement tapjoyAdPlacementForTV;
-    private ProgressDialog nDialog;
-    private ProgressDialog oDialog;
-
-    public static boolean set_allow_dimming_asap = false;
-    public static boolean set_disallow_dimming_asap = false;
-
+    public IAPManager iapManager = null;
     // GOOGLE IAB
     public BillingClient billingClient;
-
     ////////////////////////////////////////////////////////////////////////////
     // Licensing Server code
     ////////////////////////////////////////////////////////////////////////////
     public boolean is_demo = false;
     public String BASE64_PUBLIC_KEY = "this will be set in your app's Main.java";
-
     // 20 random bytes. You can override these in your own Main.java
     public byte[] SALT = new byte[]{
-            24, -96, 16, 91, 65, -86, -54, -73, -101, 12, -84, -90, -53, -68, 20, -67, 45, 35, 85, 17
+        24, -96, 16, 91, 65, -86, -54, -73, -101, 12, -84, -90, -53, -68, 20, -67, 45, 35, 85, 17
     };
+    public boolean inFloatingMode = false;
+    public boolean aleardyAtHome = false;
+    // JNI to play music, etc
+    public MediaPlayer _music = null;
+    // JNI to play sounds
+    public SoundPool _sounds = null;
+    public GLSurfaceView mGLView;
+    public final Runnable mUpdateMainThread = () -> {
+        if (bIsShuttingDown) {
+            finish();
+            Process.killProcess(Process.myPid());
+            return;
+        }
 
+        updateResultsInUi();
+    };
+    public RelativeLayout mViewGroup;
+    private ProgressDialog nDialog;
+    private ProgressDialog oDialog;
     private LicenseCheckerCallback mLicenseCheckerCallback;
     private LicenseChecker mChecker;
+    private MusicFadeOutThread musicFadeOutThread = null;
 
-    private class MyLicenseCheckerCallback implements LicenseCheckerCallback {
-        private MyLicenseCheckerCallback() {
-            super();
+    // JNI used to get Save data dir
+    public static String get_docdir() {
+        return app.getExternalFilesDir(null).getAbsolutePath();
+    }
+
+    public static String get_externaldir() {
+        // Directory of external storage
+        boolean mExternalStorageAvailable = false;
+        boolean mExternalStorageWriteable = false;
+
+        String state = Environment.getExternalStorageState();
+        if (state.equals(Environment.MEDIA_MOUNTED)) {
+            mExternalStorageAvailable = mExternalStorageWriteable = true;
+        } else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
+            mExternalStorageAvailable = true;
+            mExternalStorageWriteable = false;
+        } else {
+            // mExternalStorageAvailable = mExternalStorageWriteable = false;
         }
 
-        @Override
-        public void allow(int reason) {
-            Log.v("allow()", "Allow the user access");
-            if (isFinishing()) {
-                // Don't update UI if Activity is finishing.
-                return;
+        if (!mExternalStorageWriteable) {
+            return "";
+        }
+
+        // Alternatave GetBundlePrefix & GetBundleName.
+        return "";
+        // return Environment.getExternalStorageDirectory().toString();
+    }
+
+    // JNI used to get Save data dir
+    public static String get_apkFileName() {
+        try {
+            return app.getPackageManager().getApplicationInfo(PackageName, 0).sourceDir;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Unable to locate assets, aborting...");
+        }
+    }
+
+    public static String get_region() {
+        // Will return region in the format "en_us"
+        Locale locale = Locale.getDefault();
+        return (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase();
+    }
+
+    public static String get_clipboard() {
+        // Note: On Honeycomb this appears to cause a crash because it has to be done in the main thread, which isn't active when
+        // JNI invokes this.  So we have to do a callback and send back the answer later? Argh.  For now, I'll try/catch the crash, it
+        // will just be a no-op.
+
+        try {
+            ClipboardManager clipboardManager = (ClipboardManager) app.getSystemService(
+                CLIPBOARD_SERVICE);
+            return clipboardManager.getPrimaryClip().getItemAt(0).getText().toString();
+        } catch (Exception e) {
+            Log.d(PackageName, "get_clipboard> Avoided crash. " + e);
+            return "Thread error, sorry, paste can't be used here.";
+        }
+    }
+
+    @SuppressLint({"WrongConstant", "MissingPermission", "HardwareIds"})
+    public static String get_deviceID() {
+        String m_szDevIDShort = "35" + // We make this look like a valid IMEI
+            Build.BOARD.length() % 10 + Build.BRAND.length() % 10 + Build.CPU_ABI.length() % 10 + Build.DEVICE.length() % 10 + Build.DISPLAY.length() % 10 + Build.HOST.length() % 10 + Build.ID.length() % 10 + Build.MANUFACTURER.length() % 10 + Build.MODEL.length() % 10 + Build.PRODUCT.length() % 10 + Build.TAGS.length() % 10 + Build.TYPE.length() % 10 + Build.USER.length() % 10; // 13 digits
+
+        if (app.checkCallingOrSelfPermission("android.permission.READ_PHONE_STATE") == PackageManager.PERMISSION_GRANTED) {
+            TelephonyManager tm = (TelephonyManager) app.getSystemService(Context.TELEPHONY_SERVICE);
+            final String DeviceId, SerialNum;
+            DeviceId = tm.getDeviceId();
+            SerialNum = tm.getSimSerialNumber();
+            return m_szDevIDShort + DeviceId + SerialNum;
+        } else {
+            return m_szDevIDShort;
+        }
+    }
+
+    @SuppressLint({"HardwareIds", "MissingPermission"})
+    public static String get_macAddress() {
+        WifiManager wimanager = (WifiManager) app.getApplicationContext()
+            .getSystemService(Context.WIFI_SERVICE);
+        String macAddress = wimanager.getConnectionInfo().getMacAddress();
+        return macAddress == null ? "" : macAddress;
+    }
+
+    public static String get_language() {
+        return Locale.getDefault().getLanguage().toLowerCase();
+    }
+
+    public static String get_device_model() {
+        String str = Build.MODEL;
+        Log.d("get_device_model", str);
+        return str;
+    }
+
+    public static String get_device_os() {
+        String str = Build.VERSION.RELEASE;
+        Log.d("get_device_os", str);
+        return str;
+    }
+
+    public static int is_app_installed(String str) {
+        try {
+            app.getPackageManager().getApplicationInfo(str, 0);
+            return 1;
+        } catch (PackageManager.NameNotFoundException unused) {
+            return 0;
+        }
+    }
+
+    private static boolean hasSuperuserApk() {
+        return new File("/system/app/Superuser.apk").exists();
+    }
+
+    private static int isTestKeyBuild() {
+        String str = Build.TAGS;
+        if ((str != null) && (str.contains("test-keys"))) ;
+        for (int i = 1; ; i = 0) {
+            return i;
+        }
+    }
+
+    public static String get_advertisingIdentifier() {
+        return m_advertiserID;
+    }
+
+    public static String get_cantSupportTrees() {
+        return (hasSuperuserApk() || is_app_installed("com.noshufou.android.su") == 1 || is_app_installed(
+            "com.thirdparty.superuser") == 1 || is_app_installed("eu.chainfire.supersu") == 1 || is_app_installed(
+            "com.koushikdutta.superuser") == 1 || is_app_installed("com.zachspong.temprootremovejb") == 1 || is_app_installed(
+            "com.ramdroid.appquarantine") == 1 || is_app_installed("cyanogenmod.superuser") == 1 || is_app_installed(
+            "com.devadvance.rootcloakplus") == 1) ? "0" : "4322";
+    }
+
+    public static String get_getNetworkType() {
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+            try {
+                NetworkInfo activeNetworkInfo = ((ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
+                if (activeNetworkInfo != null) {
+                    if (activeNetworkInfo.getType() == 1) {
+                        // Wifi is connected
+                        return "wifi";
+                    }
+                    if (activeNetworkInfo.getType() == 0) {
+                        // Mobile connection available
+                        return "mobile";
+                    }
+                }
+
+                // No connection available
+                return "none";
+            } catch (Exception e) {
+                // No connection available
+                Log.d("DeviceNetwork", e.getMessage());
+                return "none";
             }
-
-            // Should allow user access.
-            // displayResult(getString(R.string.allow));
-        }
-
-        @Override
-        public void dontAllow(int reason) {
-            Log.v("dontAllow()", "Don't allow the user access");
-            is_demo = true;
-            if (isFinishing()) {
-                // Don't update UI if Activity is finishing.
-                return;
-            }
-
-            // In this example, we show a dialog that takes the user to Market.
-            showDialog(0);
-        }
-
-        @Override
-        public void applicationError(int applicationErrorCode) {
-            Log.v("applicationError", String.format("Application error: %1$s", applicationErrorCode));
-            dontAllow(applicationErrorCode);
-            if (isFinishing()) {
-                // Don't update UI if Activity is finishing.
-                return;
+        } else {
+            ConnectivityManager connManager = (ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE);
+            try {
+                if (connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).isConnected()) {
+                    // Wifi is connected
+                    return "wifi";
+                } else if (connManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE)
+                    .isConnected()) {
+                    // Mobile connection available
+                    return "mobile";
+                } else {
+                    // No connection available
+                    return "none";
+                }
+            } catch (Exception e2) {
+                // No connection available
+                Log.d("DeviceNetwork", e2.getMessage());
+                return "none";
             }
         }
     }
 
+    // JNI to talk to Kiip
+    public static void HandleAchievement(String achievement) {
+        Log.v("Achievement", "Unlocked value: " + achievement);
+        app.FireAchievement(achievement);
+    }
+
+    /**
+     * The listener that listen to events from the accelerometer listener
+     */
+
+    // JNI to open_url
+    public static void LaunchURL(String url) {
+        Intent intent = new Intent("android.intent.action.VIEW");
+        intent.setData(Uri.parse(url));
+        try {
+            app.startActivity(intent);
+        } catch (ActivityNotFoundException unused) {
+            Log.v("LaunchURL", "Couldn't find activity to launch URL!");
+        }
+    }
+
+    public static void create_dir_recursively(String basepath, String path) {
+        new File(basepath + path).mkdirs();
+    }
+
+    public static void setViewVisibility(View view, boolean visible) {
+        if (visible) {
+            view.setVisibility(View.VISIBLE);
+        } else {
+            view.setVisibility(View.INVISIBLE);
+        }
+
+        if (view instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                setViewVisibility(viewGroup.getChildAt(i), visible);
+            }
+        }
+    }
+
+    public static synchronized void music_play(String fname, boolean looping) {
+        if (app._music != null) {
+            app._music.reset();
+        } else {
+            app._music = new MediaPlayer();
+        }
+
+        if (fname.charAt(0) == '/') {
+            // Load as raw, not an asset
+            try {
+                FileInputStream fileInputStream = new FileInputStream(fname);
+                app._music.setDataSource(fileInputStream.getFD());
+                fileInputStream.close();
+                app._music.setLooping(looping);
+                app._music.prepare();
+                music_set_volume(m_lastMusicVol);
+                app._music.start();
+            } catch (IOException unused) {
+                String packageName = app.getPackageName();
+                Log.d(packageName, "Can't load music (raw) filename: " + fname);
+            } catch (IllegalStateException unused2) {
+                String packageName2 = app.getPackageName();
+                Log.d(packageName2, "Can't load music (raw), illegal state filename: " + fname);
+                app._music.reset();
+            }
+            return;
+        }
+
+        try {
+            AssetFileDescriptor openFd = app.getAssets().openFd(fname);
+            app._music.setDataSource(openFd.getFileDescriptor(),
+                openFd.getStartOffset(),
+                openFd.getLength()
+            );
+            openFd.close();
+            app._music.setLooping(looping);
+            app._music.prepare();
+            music_set_volume(m_lastMusicVol);
+            app._music.start();
+        } catch (IOException unused3) {
+            Log.d(app.getPackageName(), "Can't load music. filename: " + fname);
+        } catch (IllegalStateException unused4) {
+            Log.d(app.getPackageName(), "Can't load music, illegal state. filename: " + fname);
+            app._music.reset();
+        }
+    }
+
+    public static synchronized void music_stop() {
+        if (app._music != null) {
+            if (app.musicFadeOutThread != null && app.musicFadeOutThread.isAlive()) {
+                try {
+                    app.musicFadeOutThread.interrupt();
+                    app.musicFadeOutThread.join();
+                } catch (InterruptedException unused) {
+                    /* ~ */
+                }
+            }
+
+            app._music.stop();
+        }
+    }
+
+    public static synchronized void music_fadeout(int duration) {
+        if (app._music != null && app._music.isPlaying()) {
+            if (duration <= 0) {
+                music_stop();
+            } else if (app.musicFadeOutThread == null || !app.musicFadeOutThread.isAlive()) {
+                app.musicFadeOutThread = new MusicFadeOutThread(duration);
+                app.musicFadeOutThread.start();
+            }
+        }
+    }
+
+    public static synchronized void music_set_volume(float v) {
+        if (app._music != null) {
+            m_lastMusicVol = v;
+            app._music.setVolume(v, v);
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    public static synchronized void vibrate(int vibMS) {
+        Vibrator vibrator = ((Vibrator) app.getSystemService(Context.VIBRATOR_SERVICE));
+        if (vibrator != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(vibMS,
+                    VibrationEffect.DEFAULT_AMPLITUDE
+                ));
+            } else {
+                // Deprecated in API 26
+                vibrator.vibrate(vibMS);
+            }
+        }
+    }
+
+    public static synchronized int music_get_pos() {
+        if (app._music == null) {
+            return 0;
+        }
+        return app._music.getCurrentPosition();
+    }
+
+    public static synchronized boolean music_is_playing() {
+        if (app._music == null) {
+            return false;
+        }
+        return app._music.isPlaying();
+    }
+
+    public static synchronized void music_set_pos(int positionMS) {
+        if (app._music == null) {
+            Log.d(
+                app.getPackageName(),
+                "warning: music_set_position: no music playing, can't set position"
+            );
+            return;
+        }
+
+        app._music.seekTo(positionMS);
+    }
+
+    public static synchronized void sound_init() {
+        if (app._sounds == null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                AudioAttributes audioAttributes = new AudioAttributes.Builder().setUsage(
+                        AudioAttributes.USAGE_GAME)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
+
+                app._sounds = new SoundPool.Builder().setAudioAttributes(audioAttributes)
+                    .setMaxStreams(8).build();
+
+                return;
+            }
+
+            app._sounds = new SoundPool(8, AudioManager.STREAM_MUSIC, 1);
+        }
+    }
+
+    public static synchronized void sound_destroy() {
+        if (app._sounds != null) {
+            app._sounds.release();
+            app._sounds = null;
+        }
+    }
+
+    public static synchronized int sound_load(String sound) {
+        if (app._sounds == null) {
+            sound_init();
+        }
+
+        if (sound.charAt(0) == '/') {
+            // Must be a raw file on the disc, not in the assets.  load differently
+            return app._sounds.load(sound, 1);
+        }
+
+        try {
+            AssetFileDescriptor openFd = app.getAssets().openFd(sound);
+            return app._sounds.load(openFd.getFileDescriptor(),
+                openFd.getStartOffset(),
+                openFd.getLength(),
+                1
+            );
+        } catch (IOException unused) {
+            Log.d("Can't load sound", sound);
+        }
+
+        return 0;
+    }
+
+    public static synchronized int sound_play(
+        int soundID, float leftVol, float rightVol, int priority, int loop, float speedMod
+    ) {
+        if (app._sounds == null) {
+            sound_init();
+        }
+
+        return app._sounds.play(soundID, leftVol, rightVol, priority, loop, speedMod);
+    }
+
+    public static void sound_kill(int streamID) {
+        if (app._sounds == null) {
+            sound_init();
+        }
+
+        app._sounds.unload(streamID);
+    }
+
+    public static void sound_stop(int streamID) {
+        if (app._sounds == null) {
+            sound_init();
+        }
+
+        app._sounds.stop(streamID);
+    }
+
+    public static void sound_set_vol(int streamID, float left, float right) {
+        if (app._sounds == null) {
+            sound_init();
+        }
+
+        app._sounds.setVolume(streamID, left, right);
+    }
+
+    public static void sound_set_rate(int streamID, float rate) {
+        if (app._sounds == null) {
+            sound_init();
+        }
+
+        app._sounds.setRate(streamID, rate);
+    }
+
+    public static void _OpenCSTS(
+        String cstsuid,
+        String country,
+        String language,
+        boolean payer,
+        String ingameplayerid,
+        String environment,
+        String misc
+    ) {
+        Intent intent = new Intent(app.getApplicationContext(), CSTSWebViewActivity.class);
+        intent.putExtra("cstsuid", cstsuid);
+        intent.putExtra("country", country);
+        intent.putExtra("language", language);
+        intent.putExtra("payer", payer);
+        intent.putExtra("ingameplayerid", ingameplayerid);
+        intent.putExtra("environment", environment);
+        intent.putExtra("misc", misc);
+        app.startActivity(intent);
+    }
+
+    public static String get_Appsflyer_UID() {
+        return "";
+    }
+
+    public static native void nativeOnKey(int type, int keycode, int c);
+
+    public static native void nativeOnTrackball(float x, float y);
+
+    public static native void nativeOnAccelerometerUpdate(float x, float y, float z);
+
+    public static native void nativeSendGUIEx(int messageType, int parm1, int parm2, int finger);
+
+    public static native void nativeSendGUIStringEx(
+        int messageType, int parm1, int parm2, int finger, String s
+    );
+
+    public static native void nativeCancelBtnPressed();
+
+    public static native int nativeGetChatString();
+
+    public static native float nativeGetEditBoxOffset();
+
+    public static native float nativeGetScreenHeight();
+
+    public static native float nativeGetScreenWidth();
+
+    public static native void nativeInitActivity(Activity activity);
+
+    public static native void nativeUpdateConsoleLogPos(float f);
+
+    public String GetAppsflyerUID() {
+        return "";
+    }
+
+    public void onApplsFlyerLogEvent(String eventName, String data) {
+        /* ~ */
+    }
+
+    public void onApplsFlyerLogPurchase(String item, String currency, String price) {
+        /* ~ */
+    }
+
     protected Dialog onCreateDialog(int id) {
         // We have only one dialog.
-        return new AlertDialog.Builder(this)
-                .setTitle("Application not licensed")
-                .setMessage("This application is not licensed.  Please purchase it from Android Market.\n\nTip: if you have purchased this application, press Retry a few times.  It may take a minute to connect to the licensing server.  If that does not work, try rebooting your phone.")
-                .setPositiveButton("Buy app", (dialogInterface, i13) -> {
-                    startActivity(new Intent("android.intent.action.VIEW", Uri.parse("https://market.android.com/details?id=" + this.getPackageName())));
-                    finish();
-                    Process.killProcess(Process.myPid());
-                }).setNegativeButton("Exit", (dialogInterface, i1) -> {
-                    finish();
-                    Process.killProcess(Process.myPid());
-                }).setNeutralButton("Retry", (dialogInterface, i12) -> {
-                    is_demo = false;
-                    doCheck();
-                }).create();
+        return new AlertDialog.Builder(this).setTitle("Application not licensed").setMessage(
+                "This application is not licensed.  Please purchase it from Android Market.\n\nTip: if you have purchased this application, press Retry a few times.  It may take a minute to connect to the licensing server.  If that does not work, try rebooting your phone.")
+            .setPositiveButton("Buy app", (dialogInterface, i13) -> {
+                startActivity(new Intent("android.intent.action.VIEW",
+                    Uri.parse("https://market.android.com/details?id=" + getPackageName())
+                ));
+                finish();
+                Process.killProcess(Process.myPid());
+            }).setNegativeButton("Exit", (dialogInterface, i1) -> {
+                finish();
+                Process.killProcess(Process.myPid());
+            }).setNeutralButton("Retry", (dialogInterface, i12) -> {
+                is_demo = false;
+                doCheck();
+            }).create();
     }
 
     private void doCheck() {
@@ -224,22 +778,20 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     @SuppressLint("HardwareIds")
     private void license_init() {
         // Try to use more data here. ANDROID_ID is a single point of attack.
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String deviceId = Settings.Secure.getString(getContentResolver(),
+            Settings.Secure.ANDROID_ID
+        );
 
         // Library calls this when it's done.
         mLicenseCheckerCallback = new MyLicenseCheckerCallback();
         // Construct the LicenseChecker with a policy.
-        mChecker = new LicenseChecker(
-                this,
-                new ServerManagedPolicy(this, new AESObfuscator(this.SALT, getPackageName(), deviceId)),
-                // new StrictPolicy(),
-                BASE64_PUBLIC_KEY);
+        mChecker = new LicenseChecker(this,
+            new ServerManagedPolicy(this, new AESObfuscator(SALT, getPackageName(), deviceId)),
+            // new StrictPolicy(),
+            BASE64_PUBLIC_KEY
+        );
         doCheck();
     }
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    public final Handler mMainThreadHandler = new Handler();
 
     protected void onDestroy() {
         Log.d(PackageName, "Destroying...");
@@ -247,13 +799,132 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         Log.d(PackageName, "Destroying helper.");
     }
 
+    // TAPJOY
+    public void getFullScreenAdResponse() {
+        Log.i(PackageName, "Displaying Full Screen Ad..");
+    }
+
+    public void getFullScreenAdResponseFailed(int error) {
+        Log.i(PackageName, "No Full Screen Ad to display: " + error);
+    }
+
+    public void getDisplayAdResponse(View view) {
+        adView = view;
+
+        int ad_width = adBannerWidth;
+        int ad_height = adBannerHeight;
+
+        if (ad_width == 0) {
+            ad_width = view.getLayoutParams().width;
+        }
+
+        if (ad_height == 0) {
+            ad_height = adView.getLayoutParams().height;
+        }
+
+        Log.d(PackageName, "adView dimensions: " + ad_width + "x" + ad_height);
+
+        int measuredWidth = app.mGLView.getMeasuredWidth();
+        Log.d(PackageName, "mGLView width is " + measuredWidth);
+
+        if (measuredWidth > ad_width) {
+            measuredWidth = ad_width;
+        }
+
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(measuredWidth,
+            (ad_height * measuredWidth) / ad_width
+        );
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+
+        adView.setLayoutParams(layoutParams);
+        Log.v(PackageName,
+            "adLinearLayout dimensions: " + mGLView.getMeasuredWidth() + "x" + mGLView.getMeasuredHeight()
+        );
+        nativeSendGUIEx(MESSAGE_TYPE_TAPJOY_AD_READY, 1, 0, 0);
+    }
+
+    public void getDisplayAdResponseFailed(String error) {
+        Log.d(PackageName, "getDisplayAd error: " + error);
+        nativeSendGUIEx(MESSAGE_TYPE_TAPJOY_AD_READY, 0, 0, 0);
+
+        // We must use a handler since we cannot update UI elements from a different thread.
+        // mMainThreadHandler.post(mUpdateResults);
+    }
+
+    // This method must be implemented if using the TapjoyConnect.getTapPoints() method.
+    // It is the callback method which contains the currency and points data.
+    public void getUpdatePoints(String currencyName, int pointTotal) {
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_TAP_POINTS_RETURN,
+            pointTotal,
+            0,
+            0,
+            currencyName
+        );
+    }
+
+    // This method must be implemented if using the TapjoyConnect.getTapPoints() method.
+    // It is the callback method which contains the currency and points data.
+    public void getUpdatePointsFailed(String error) {
+        Log.i("growtopia", "getTapPoints error: " + error);
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_TAP_POINTS_RETURN_ERROR, 0, 0, 0, error);
+    }
+
+    // Notifier for when spending virtual currency succeeds.
+    public void getSpendPointsResponse(String currencyName, int pointTotal) {
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_SPEND_TAP_POINTS_RETURN,
+            pointTotal,
+            0,
+            0,
+            currencyName
+        );
+    }
+
+    // Notifier for when spending virtual currency fails.
+    public void getSpendPointsResponseFailed(String error) {
+        Log.i("growtopia", "spendTapPoints error: " + error);
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_SPEND_TAP_POINTS_RETURN_ERROR, 0, 0, 0, error);
+    }
+
+    public void getAwardPointsResponse(String currencyName, int pointTotal) {
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_AWARD_TAP_POINTS_RETURN,
+            pointTotal,
+            0,
+            0,
+            currencyName
+        );
+    }
+
+    public void getAwardPointsResponseFailed(String error) {
+        Log.i("growtopia", "getAwardPointsResponseFailed: " + error);
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_AWARD_TAP_POINTS_RETURN_ERROR, 0, 0, 0, error);
+    }
+
+    public void earnedTapPoints(int amount) {
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_EARNED_TAP_POINTS, amount, 0, 0, "");
+    }
+
+    public void videoReady() {
+        Log.i("growtopia", "VIDEO READY");
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_MOVIE_AD_READY, 1, 0, 0, "");
+    }
+
+    // Notifier when a video ad starts.
+    public void videoStart() {
+        Log.i("growtopia", "VIDEO START");
+    }
+
+    public void videoComplete() {
+        Log.i("growtopia", "VIDEO COMPLETE");
+        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_MOVIE_AD_READY, 2, 0, 0, "");
+    }
+
     protected void onStart() {
         super.onStart();
         Tapjoy.onActivityStart(this);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PermissionActivity.mainActivity = this;
-            startActivity(new Intent(getApplicationContext(), PermissionActivity.class));
-        }
+
+        PermissionActivity.mainActivity = this;
+        startActivity(new Intent(getApplicationContext(), PermissionActivity.class));
     }
 
     protected void onStop() {
@@ -283,20 +954,22 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         nativeInitActivity(app);
 
         apiVersion = Build.VERSION.SDK_INT;
-        Log.d(PackageName, "***********************************************************************");
+        Log.d(PackageName,
+            "***********************************************************************"
+        );
         Log.d(PackageName, "API Level: " + apiVersion);
 
         super.onCreate(savedInstanceState);
 
         mGLView = new AppGLSurfaceView(this, this);
         mViewGroup = new RelativeLayout(this);
-        mViewGroup.setLayoutParams(new ViewGroup.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.MATCH_PARENT));
+        mViewGroup.setLayoutParams(new ViewGroup.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
+            RelativeLayout.LayoutParams.MATCH_PARENT
+        ));
 
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.MATCH_PARENT);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
+            RelativeLayout.LayoutParams.MATCH_PARENT
+        );
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         mGLView.setLayoutParams(layoutParams);
 
@@ -314,9 +987,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
         // Create dummy tapjoy view overlay we'll show ads on
         adLinearLayout = new RelativeLayout(this);
-        layoutParams = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT);
+        layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        );
         Log.d(PackageName, "Tapjoy enabled - setting up adview overlay");
         addContentView(adLinearLayout, layoutParams);
 
@@ -326,91 +999,18 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         run_hooked = false;
         tapjoy_ad_show = 0;
         if (IAPEnabled) {
-            purchaseUpdateListener = (billingResult, list) -> {
-                int responseCode = billingResult.getResponseCode();
-                if (responseCode == 0 && list != null) {
-                    for (Purchase purchase : list) {
-                        if (purchase.getPurchaseState() == 1) {
-                            nativeSendGUIStringEx(
-                                    MESSAGE_TYPE_IAP_RESULT,
-                                    responseCode,
-                                    0,
-                                    0,
-                                    purchase.getOriginalJson() + "|" + purchase.getSignature());
-                        } else if (purchase.getPurchaseState() == 2) {
-                            nativeSendGUIStringEx(
-                                    MESSAGE_TYPE_IAP_RESULT,
-                                    responseCode,
-                                    5,
-                                    0,
-                                    purchase.getOriginalJson() + "|" + purchase.getSignature());
-                        }
-                    }
-                } else {
-                    if (responseCode == 7) {
-                        Purchase.PurchasesResult queryPurchases = billingClient.queryPurchases(BillingClient.SkuType.INAPP);
-                        if (queryPurchases == null) {
-                            nativeSendGUIEx(
-                                    MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE,
-                                    -1,
-                                    0,
-                                    0);
-                            return;
-                        }
-
-                        if (queryPurchases.getPurchasesList() == null || queryPurchases.getPurchasesList().size() == 0) {
-                            nativeSendGUIEx(
-                                    MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE,
-                                    -1,
-                                    0,
-                                    0);
-                        } else {
-                            for (com.android.billingclient.api.Purchase purchase : queryPurchases.getPurchasesList()) {
-                                if (purchase.getPurchaseState() == 1) {
-                                    nativeSendGUIStringEx(
-                                            MESSAGE_TYPE_IAP_RESULT,
-                                            responseCode,
-                                            0,
-                                            0,
-                                            purchase.getOriginalJson() + "|" + purchase.getSignature());
-                                }
-                            }
-                        }
-                    } else {
-                        nativeSendGUIEx(MESSAGE_TYPE_IAP_RESULT, responseCode, 0, 0);
-                    }
-                }
-            };
-
-            billingClient = BillingClient.newBuilder(this)
-                    .setListener(purchaseUpdateListener)
-                    .enablePendingPurchases()
-                    .build();
-
-            billingClient.startConnection(new BillingClientStateListener() {
-                @Override
-                public void onBillingServiceDisconnected() {
-                    /* ~ */
-                }
-
-                @Override
-                public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
-                    billingResult.getResponseCode();
-                }
-            });
+            iapManager = new IAPManager(this);
         }
 
         Anzu.SetContext(this);
         sendVersionDetails();
     }
 
-    public boolean inFloatingMode = false;
-    public boolean aleardyAtHome = false;
-
     protected synchronized void onPause() {
         Log.d(PackageName, "onPause...");
         if (!inFloatingMode) {
-            InputMethodManager inputMethodManager = (InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE);
+            InputMethodManager inputMethodManager = (InputMethodManager) app.getSystemService(
+                Context.INPUT_METHOD_SERVICE);
             if (mGLView != null) {
                 inputMethodManager.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
             }
@@ -445,6 +1045,10 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
         super.onResume();
 
+        if (iapManager != null) {
+            iapManager.RequestAIPPurchasedList();
+        }
+
         if (inFloatingMode && aleardyAtHome) {
             SharedActivity.app.aleardyAtHome = false;
             FloatingService.mFloatingService.showFloatingWindow(false);
@@ -454,16 +1058,6 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             SharedActivity.app.aleardyAtHome = false;
         }
     }
-
-    public final Runnable mUpdateMainThread = () -> {
-        if (bIsShuttingDown) {
-            finish();
-            Process.killProcess(Process.myPid());
-            return;
-        }
-
-        updateResultsInUi();
-    };
 
     private void updateResultsInUi() {
         if (set_allow_dimming_asap) {
@@ -521,200 +1115,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             makeText.show();
         });
     }
+    //***************************
 
-    // JNI used to get Save data dir
-    public static String get_docdir() {
-        return app.getExternalFilesDir(null).getAbsolutePath();
-    }
-
-    public static String get_externaldir() {
-        // Directory of external storage
-        boolean mExternalStorageAvailable = false;
-        boolean mExternalStorageWriteable = false;
-
-        String state = Environment.getExternalStorageState();
-        if (state.equals(Environment.MEDIA_MOUNTED)) {
-            mExternalStorageAvailable = mExternalStorageWriteable = true;
-        }
-        else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
-            mExternalStorageAvailable = true;
-            mExternalStorageWriteable = false;
-        }
-        else {
-            // mExternalStorageAvailable = mExternalStorageWriteable = false;
-        }
-
-        if (!mExternalStorageWriteable) {
-            return "";
-        }
-
-        // Alternatave GetBundlePrefix & GetBundleName.
-        return "";
-        // return Environment.getExternalStorageDirectory().toString();
-    }
-
-    // JNI used to get Save data dir
-    public static String get_apkFileName() {
-        try {
-            return app.getPackageManager().getApplicationInfo(PackageName, 0).sourceDir;
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Unable to locate assets, aborting...");
-        }
-    }
-
-    public static String get_region() {
-        // Will return region in the format "en_us"
-        Locale locale = Locale.getDefault();
-        return (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase();
-    }
-
-    public static String get_clipboard() {
-        // Note: On Honeycomb this appears to cause a crash because it has to be done in the main thread, which isn't active when
-        // JNI invokes this.  So we have to do a callback and send back the answer later? Argh.  For now, I'll try/catch the crash, it
-        // will just be a no-op.
-
-        try {
-            ClipboardManager clipboardManager = (ClipboardManager) app.getSystemService(CLIPBOARD_SERVICE);
-            return clipboardManager.getPrimaryClip().getItemAt(0).getText().toString();
-        } catch (Exception e) {
-            Log.d(PackageName, "get_clipboard> Avoided crash. " + e);
-            return "Thread error, sorry, paste can't be used here.";
-        }
-    }
-
-    @SuppressLint({"WrongConstant", "MissingPermission", "HardwareIds"})
-    public static String get_deviceID() {
-        String m_szDevIDShort = "35" + // We make this look like a valid IMEI
-                Build.BOARD.length() % 10 + Build.BRAND.length() % 10 +
-                Build.CPU_ABI.length() % 10 + Build.DEVICE.length() % 10 +
-                Build.DISPLAY.length() % 10 + Build.HOST.length() % 10 +
-                Build.ID.length() % 10 + Build.MANUFACTURER.length() % 10 +
-                Build.MODEL.length() % 10 + Build.PRODUCT.length() % 10 +
-                Build.TAGS.length() % 10 + Build.TYPE.length() % 10 +
-                Build.USER.length() % 10; // 13 digits
-
-        if (app.checkCallingOrSelfPermission("android.permission.READ_PHONE_STATE") == PackageManager.PERMISSION_GRANTED) {
-            TelephonyManager tm = (TelephonyManager) app.getSystemService(Context.TELEPHONY_SERVICE);
-            final String DeviceId, SerialNum;
-            DeviceId = tm.getDeviceId();
-            SerialNum = tm.getSimSerialNumber();
-            return m_szDevIDShort + DeviceId + SerialNum;
-        } else {
-            return m_szDevIDShort;
-        }
-    }
-
-    @SuppressLint({"HardwareIds", "MissingPermission"})
-    public static String get_macAddress() {
-        WifiManager wimanager = (WifiManager) app.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        String macAddress = wimanager.getConnectionInfo().getMacAddress();
-        return macAddress == null ? "" : macAddress;
-    }
-
-    public static String get_language() {
-        return Locale.getDefault().getLanguage().toLowerCase();
-    }
-
-    public static String get_device_model() {
-        String str = Build.MODEL;
-        Log.d("get_device_model", str);
-        return str;
-    }
-
-    public static String get_device_os() {
-        String str = Build.VERSION.RELEASE;
-        Log.d("get_device_os", str);
-        return str;
-    }
-
-    public static int is_app_installed(String str) {
-        try {
-            app.getPackageManager().getApplicationInfo(str, 0);
-            return 1;
-        }
-        catch (PackageManager.NameNotFoundException unused) {
-            return 0;
-        }
-    }
-
-    private static boolean hasSuperuserApk() {
-        return new File("/system/app/Superuser.apk").exists();
-    }
-
-    private static int isTestKeyBuild() {
-        String str = Build.TAGS;
-        if ((str != null) && (str.contains("test-keys")));
-        for (int i = 1; ; i = 0) {
-            return i;
-        }
-    }
-
-    public static String get_advertisingIdentifier() {
-        return m_advertiserID;
-    }
-
-    public static String get_cantSupportTrees() {
-        return (
-                hasSuperuserApk() ||
-                is_app_installed("com.noshufou.android.su") == 1 ||
-                is_app_installed("com.thirdparty.superuser") == 1 ||
-                is_app_installed("eu.chainfire.supersu") == 1 ||
-                is_app_installed("com.koushikdutta.superuser") == 1 ||
-                is_app_installed("com.zachspong.temprootremovejb") == 1 ||
-                is_app_installed("com.ramdroid.appquarantine") == 1 ||
-                is_app_installed("cyanogenmod.superuser") == 1 ||
-                is_app_installed("com.devadvance.rootcloakplus") == 1
-        ) ? "0" : "4322";
-    }
-
-    public static String get_getNetworkType() {
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
-            try {
-                NetworkInfo activeNetworkInfo = ((ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
-                if (activeNetworkInfo != null) {
-                    if (activeNetworkInfo.getType() == 1) {
-                        // Wifi is connected
-                        return "wifi";
-                    }
-                    if (activeNetworkInfo.getType() == 0) {
-                        // Mobile connection available
-                        return "mobile";
-                    }
-                }
-
-                // No connection available
-                return "none";
-            }
-            catch (Exception e) {
-                // No connection available
-                Log.d("DeviceNetwork", e.getMessage());
-                return "none";
-            }
-        }
-        else {
-            ConnectivityManager connManager = (ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE);
-            try {
-                if (connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).isConnected()) {
-                    // Wifi is connected
-                    return "wifi";
-                }
-                else if(connManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).isConnected()){
-                    // Mobile connection available
-                    return "mobile";
-                }
-                else {
-                    // No connection available
-                    return "none";
-                }
-            }
-            catch (Exception e2) {
-                // No connection available
-                Log.d("DeviceNetwork", e2.getMessage());
-                return "none";
-            }
-        }
-    }
+    //************** SOUND STUFF *************
 
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
@@ -736,7 +1139,10 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         sensorManager.unregisterListener(this);
         if (hz > 0.0f) {
-            sensorManager.registerListener(app, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
+            sensorManager.registerListener(app,
+                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_GAME
+            );
         }
     }
 
@@ -744,43 +1150,6 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     public void FireAchievement(String achievement) {
         Log.v("Achievement", "Firing in Wrong instance");
     }
-
-    // JNI to talk to Kiip
-    public static void HandleAchievement(String achievement) {
-        Log.v("Achievement", "Unlocked value: " + achievement);
-        app.FireAchievement(achievement);
-    }
-
-    /**
-     * The listener that listen to events from the accelerometer listener
-     */
-
-    // JNI to open_url
-    public static void LaunchURL(String url) {
-        Intent intent = new Intent("android.intent.action.VIEW");
-        intent.setData(Uri.parse(url));
-        try {
-            app.startActivity(intent);
-        }
-        catch (ActivityNotFoundException unused) {
-            Log.v("LaunchURL", "Couldn't find activity to launch URL!");
-        }
-    }
-
-    public static void create_dir_recursively(String basepath, String path) {
-        new File(basepath + path).mkdirs();
-    }
-
-    public static boolean isKeyboardExist = false;
-    public static int m_KeyBoardHeight = 0;
-    public static Button m_CancelButton = null;
-    public static Button m_DoneButton = null;
-    public static RelativeLayout m_editTextRoot = null;
-    public static int maxLength = -1;
-    public static int tempNum = 0;
-    public static boolean updateText = false;
-    public static boolean usingGoogleBilling = false;
-    public static boolean passwordField = false;
 
     private void CreateEditBox() {
         m_editText = new EditText(this);
@@ -795,16 +1164,15 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         m_editText.setTextColor(ViewCompat.MEASURED_STATE_MASK);
         m_editText.setTextIsSelectable(true);
 
-        RegisterLayoutChangeCallback();
         CreateEditBoxBG();
         UpdateEditBoxInView(false, true);
     }
 
     private void CreateEditBoxBG() {
         m_editTextRoot = new RelativeLayout(this);
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                m_editText.getMeasuredHeight());
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
+            m_editText.getMeasuredHeight()
+        );
         layoutParams.addRule(12);
         layoutParams.setMargins(0, 0, 0, m_KeyBoardHeight);
         m_editTextRoot.setLayoutParams(layoutParams);
@@ -812,7 +1180,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
         m_DoneButton = new Button(this);
         m_DoneButton.setOnClickListener(view -> {
-            ((InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+            ((InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(mGLView.getWindowToken(),
+                0
+            );
             nativeOnKey(1, 13, 13);
             Log.d(PackageName, "Done button pressed.");
             mGLView.requestFocus();
@@ -862,7 +1232,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         });
     }
 
-    private void UpdateEditBoxInView(boolean showEditTextBox, boolean unk) {
+    protected void UpdateEditBoxInView(boolean showEditTextBox, boolean unk) {
         setViewVisibility(m_editTextRoot, showEditTextBox);
 
         if (showEditTextBox) {
@@ -904,15 +1274,16 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                 m_editText.setSelection(m_editText.getText().length());
                 return true;
             });
-        }
-        catch (NoClassDefFoundError e) {
+        } catch (NoClassDefFoundError e) {
             Log.d(PackageName, "setOnEditorActionListener(> Avoided crash. " + e);
         }
 
         try {
             m_editText.setOnEditorActionListener((textView, keyCode, keyEvent) -> {
                 if (keyCode == KeyEvent.KEYCODE_HOME || keyCode == KeyEvent.KEYCODE_ENDCALL) {
-                    ((InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+                    ((InputMethodManager) app.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(mGLView.getWindowToken(),
+                        0
+                    );
                     Log.d(PackageName, "editor action says we're done editing text");
                     nativeOnKey(1, 13, 13);
                     Log.d(PackageName, "Removing edittextView setOnEditorActionListener");
@@ -923,8 +1294,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                 Log.d(PackageName, "Removing edittextView setOnEditorActionListener2");
                 return false;
             });
-        }
-        catch (NoClassDefFoundError e) {
+        } catch (NoClassDefFoundError e) {
             Log.d(PackageName, "setOnEditorActionListener(> Avoided crash. " + e);
         }
 
@@ -966,14 +1336,14 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         });
     }
 
-    private void UpdateEditBoxRootViewPosition() {
+    protected void UpdateEditBoxRootViewPosition() {
         m_editText.measure(0, 0);
 
         int measuredHeight = m_editText.getMeasuredHeight();
 
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                measuredHeight);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
+            measuredHeight
+        );
         layoutParams.addRule(12);
         layoutParams.setMargins(0, 0, 0, m_KeyBoardHeight);
         m_editTextRoot.setLayoutParams(layoutParams);
@@ -989,17 +1359,17 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         float nativeGetScreenWidth = (float) ((int) nativeGetScreenWidth());
         int measuredHeight = m_editText.getMeasuredHeight();
 
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-                (int) (0.7f * nativeGetScreenWidth),
-                m_editText.getMeasuredHeight());
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams((int) (0.7f * nativeGetScreenWidth),
+            m_editText.getMeasuredHeight()
+        );
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         layoutParams.setMargins((int) nativeGetEditBoxOffset(), 0, 0, 0);
         m_editText.setLayoutParams(layoutParams);
         m_editText.setSelection(m_editText.getText().length());
 
-       layoutParams = new RelativeLayout.LayoutParams(
-                (int) (nativeGetScreenWidth * 0.12f),
-                measuredHeight);
+        layoutParams = new RelativeLayout.LayoutParams((int) (nativeGetScreenWidth * 0.12f),
+            measuredHeight
+        );
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         layoutParams.setMargins(0, 0, (int) (nativeGetScreenWidth * 0.12f), 0);
         m_DoneButton.setLayoutParams(layoutParams);
@@ -1007,38 +1377,15 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         m_DoneButton.setTextColor(Color.parseColor("#5c5ac7"));
         m_DoneButton.setText(R.string.textedit_done);
 
-        RelativeLayout.LayoutParams layoutParams3 = new RelativeLayout.LayoutParams(
-                (int) (nativeGetScreenWidth * 0.12f),
-                measuredHeight);
+        RelativeLayout.LayoutParams layoutParams3 = new RelativeLayout.LayoutParams((int) (nativeGetScreenWidth * 0.12f),
+            measuredHeight
+        );
         layoutParams3.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         layoutParams3.setMargins(0, 0, 0, 0);
         m_CancelButton.setLayoutParams(layoutParams3);
         m_CancelButton.setBackgroundColor(0);
         m_CancelButton.setTextColor(Color.parseColor("#5c5ac7"));
         m_CancelButton.setText(R.string.textedit_cancel);
-    }
-
-    private void RegisterLayoutChangeCallback() {
-        mViewGroup.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-            if (!inFloatingMode && !aleardyAtHome) {
-                Rect rect = new Rect();
-                getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
-                // m_KeyBoardHeight = mViewGroup.getRootView().getHeight() - rect.bottom;
-
-                // If the navigation gesture is enabled it will be at the bottom or
-                // if dpi >= 600 makes the navigation bar (not navigation gesture) down.
-                // So this fix the text input problem?
-                DisplayMetrics metrics = getResources().getDisplayMetrics();
-                m_KeyBoardHeight = metrics.heightPixels - rect.bottom;
-
-                if (m_KeyBoardHeight > 0 && !m_editText.isFocused()) {
-                    showEditTextBox(true);
-                }
-                else if (m_KeyBoardHeight == 0 && m_editText.isFocused()) {
-                    showEditTextBox(false);
-                }
-            }
-        });
     }
 
     public boolean isAcceptableTextLength(int length) {
@@ -1049,8 +1396,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
         if (maxLength == 119) {
             m_editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(maxLength + 1)});
-        }
-        else {
+        } else {
             m_editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(10000)});
         }
         return true;
@@ -1067,12 +1413,15 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
     private void isKeyboardShown(View view) {
         Rect rect = new Rect();
         view.getWindowVisibleDisplayFrame(rect);
-        boolean isKeyboardShown = ((float) (view.getBottom() - rect.bottom)) > view.getResources().getDisplayMetrics().density * 128.0f;
+        boolean isKeyboardShown = ((float) (view.getBottom() - rect.bottom)) > view.getResources()
+            .getDisplayMetrics().density * 128.0f;
         if (isKeyboardShown) {
             isKeyboardExist = true;
         }
 
-        Log.d("KEYBOARD", "isKeyboardShown = " + isKeyboardShown + " and isKeyboardExist = " + isKeyboardExist);
+        Log.d("KEYBOARD",
+            "isKeyboardShown = " + isKeyboardShown + " and isKeyboardExist = " + isKeyboardExist
+        );
         if (!isKeyboardShown && isKeyboardExist && m_editText.isFocused()) {
             UpdateEditBoxInView(false, false);
             nativeOnKey(1, 13, 13);
@@ -1089,8 +1438,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
                 if (show && !m_editText.isFocused()) {
                     Log.d("NIRMAN", "KeyboardX opening...");
                     UpdateEditBoxInView(true, false);
-                }
-                else if (!show && m_editText.isFocused()) {
+                } else if (!show && m_editText.isFocused()) {
                     Log.d("NIRMAN", "KeyboardX closing...");
                     if (!passwordField && !m_canShowCustomKeyboard) {
                         nativeOnKey(1, VIRTUAL_KEY_BACK, 0);
@@ -1135,122 +1483,6 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         m_focusOnKeyboard = false;
         Log.d("Msg", "Disabling keyboard");
     }
-
-    public static void setViewVisibility(View view, boolean visible) {
-        if (visible) {
-            view.setVisibility(View.VISIBLE);
-        }
-        else {
-            view.setVisibility(View.INVISIBLE);
-        }
-
-        if (view instanceof ViewGroup) {
-            ViewGroup viewGroup = (ViewGroup) view;
-            for (int i = 0; i < viewGroup.getChildCount(); i++) {
-                setViewVisibility(viewGroup.getChildAt(i), visible);
-            }
-        }
-    }
-
-    // From MessageManager.h
-    final static int VIRTUAL_KEY_BACK = 500000;
-    final static int VIRTUAL_KEY_PROPERTIES = 500001;
-    final static int VIRTUAL_KEY_HOME = 500002;
-    final static int VIRTUAL_KEY_SEARCH = 500003;
-    final static int VIRTUAL_KEY_DIR_UP = 500004;
-    final static int VIRTUAL_KEY_DIR_DOWN = 500005;
-    final static int VIRTUAL_KEY_DIR_LEFT = 500006;
-    final static int VIRTUAL_KEY_DIR_RIGHT = 500007;
-    final static int VIRTUAL_KEY_DIR_CENTER = 500008;
-    final static int VIRTUAL_KEY_VOLUME_UP = 500009;
-    final static int VIRTUAL_KEY_VOLUME_DOWN = 500010;
-    final static int VIRTUAL_KEY_SHIFT = 500011;
-    final static int VIRTUAL_KEY_TRACKBALL_DOWN = 500035;
-    final static int VIRTUAL_DPAD_BUTTON_LEFT = 500036; //square on xperia
-    final static int VIRTUAL_DPAD_BUTTON_UP = 500037; //triangle on xperia
-    final static int VIRTUAL_DPAD_BUTTON_RIGHT = 500038; //O
-    final static int VIRTUAL_DPAD_BUTTON_DOWN = 500039; //X
-    final static int VIRTUAL_DPAD_SELECT = 500040;
-    final static int VIRTUAL_DPAD_START = 500041;
-    final static int VIRTUAL_DPAD_LBUTTON = 500042;
-    final static int VIRTUAL_DPAD_RBUTTON = 500043;
-
-    // Messages we could call on Proton using nativeSendGUIEx:
-    final static int MESSAGE_TYPE_GUI_CLICK_START = 0;
-    final static int MESSAGE_TYPE_GUI_CLICK_END = 1;
-    final static int MESSAGE_TYPE_GUI_CLICK_MOVE = 2; // Only send when button/finger is held down
-    final static int MESSAGE_TYPE_GUI_CLICK_MOVE_RAW = 3; // Win only, the raw mouse move messages
-    final static int MESSAGE_TYPE_GUI_ACCELEROMETER = 4;
-    final static int MESSAGE_TYPE_GUI_TRACKBALL = 5;
-    final static int MESSAGE_TYPE_GUI_CHAR = 6; // The input box uses it on windows since we don't have a virtual keyboard
-    static final int MESSAGE_TYPE_GUI_KEYBWD_CURSORPOS = 8;
-    static final int MESSAGE_TYPE_GUI_KEYBWD_STRING = 7;
-    final static int MESSAGE_TYPE_GUI_COPY = 9;
-    final static int MESSAGE_TYPE_GUI_PASTE = 10;
-    final static int MESSAGE_TYPE_GUI_TOGGLE_FULLSCREEN = 11;
-
-    final static int MESSAGE_TYPE_SET_ENTITY_VARIANT = 12;
-    final static int MESSAGE_TYPE_CALL_ENTITY_FUNCTION = 13;
-    final static int MESSAGE_TYPE_CALL_COMPONENT_FUNCTION_BY_NAME = 14;
-    final static int MESSAGE_TYPE_PLAY_SOUND = 15;
-    final static int MESSAGE_TYPE_VIBRATE = 16;
-    final static int MESSAGE_TYPE_REMOVE_COMPONENT = 17;
-    final static int MESSAGE_TYPE_ADD_COMPONENT = 18;
-    final static int MESSAGE_TYPE_OS_CONNECTION_CHECKED = 19; // Sent by macOS, will send an eOSSTreamEvent as parm1
-    final static int MESSAGE_TYPE_PLAY_MUSIC = 20;
-    final static int MESSAGE_TYPE_UNKNOWN = 21;
-    final static int MESSAGE_TYPE_PRELOAD_SOUND = 22;
-    final static int MESSAGE_TYPE_GUI_CHAR_RAW = 23;
-    final static int MESSAGE_TYPE_SET_SOUND_ENABLED = 24;
-
-    // Some tapjoy stuff
-    final static int MESSAGE_TYPE_TAPJOY_AD_READY = 25;
-    final static int MESSAGE_TYPE_TAPJOY_FEATURED_APP_READY = 26;
-    final static int MESSAGE_TYPE_TAPJOY_MOVIE_AD_READY = 27;
-
-    // GOOGLE BILLING
-    final static int MESSAGE_TYPE_IAP_RESULT = 28;
-    final static int MESSAGE_TYPE_IAP_ITEM_STATE = 29;
-    final static int MESSAGE_TYPE_IAP_ITEM_INFO_RESULT = 54;
-
-    // More tapjoy stuff
-    final static int MESSAGE_TYPE_TAPJOY_TAP_POINTS_RETURN = 30;
-    final static int MESSAGE_TYPE_TAPJOY_TAP_POINTS_RETURN_ERROR = 31;
-    final static int MESSAGE_TYPE_TAPJOY_SPEND_TAP_POINTS_RETURN = 32;
-    final static int MESSAGE_TYPE_TAPJOY_SPEND_TAP_POINTS_RETURN_ERROR = 33;
-    final static int MESSAGE_TYPE_TAPJOY_AWARD_TAP_POINTS_RETURN = 34;
-    final static int MESSAGE_TYPE_TAPJOY_AWARD_TAP_POINTS_RETURN_ERROR = 35;
-    final static int MESSAGE_TYPE_TAPJOY_EARNED_TAP_POINTS = 36;
-
-    final static int MESSAGE_TYPE_GUI_JOYPAD_BUTTONS = 37; // For Jake's android gamepad input
-    final static int MESSAGE_TYPE_GUI_JOYPAD = 38; // For Jake's android gamepad input
-    final static int MESSAGE_TYPE_GUI_JOYPAD_CONNECT = 39; // For Jakes android gamepad input
-    final static int MESSAGE_TYPE_CALL_ENTITY_FUNCTION_RECURSIVELY = 40; // Used to schedule fake clicks, helps me with debugging
-
-    final static int MESSAGE_TYPE_HW_TOUCH_KEYBOARD_WILL_SHOW = 41; // Ios only, when not using external keyboard
-    final static int MESSAGE_TYPE_HW_TOUCH_KEYBOARD_WILL_HIDE = 42; // Ios only, when not using external keyboard
-    final static int MESSAGE_TYPE_HW_KEYBOARD_INPUT_ENDING = 43; // Proton is done with input and requesting that the keyboard hid
-    final static int MESSAGE_TYPE_HW_KEYBOARD_INPUT_STARTING = 44; // Proton is asking for the keyboard to open
-
-    // GOOGLE BILLING again
-    final static int MESSAGE_TYPE_IAP_PURCHASED_LIST_STATE = 45; // For sending back lists of items we've already purchased
-
-    final static int MESSAGE_TYPE_CALL_STATIC_FUNCTION = 46; // Use by other platforms, but this value needs to be reserved by those platforms.
-
-    // for sending through version values
-    final static int MESSAGE_TYPE_APP_VERSION = 47;
-
-    final static int MESSAGE_USER = 1000; // Send your own messages after this #
-
-    // IAP RESPONSE CODES for Proton
-    final static int RESULT_OK = 0;
-    final static int RESULT_USER_CANCELED = 1;
-    final static int RESULT_SERVICE_UNAVAILABLE = 2;
-    final static int RESULT_BILLING_UNAVAILABLE = 3;
-    final static int RESULT_ITEM_UNAVAILABLE = 4;
-    final static int RESULT_DEVELOPER_ERROR = 5;
-    final static int RESULT_ERROR = 6;
-    final static int RESULT_OK_ALREADY_PURCHASED = 7;
 
     public int TranslateKeycodeToProtonVirtualKey(int keyCode) {
         switch (keyCode) {
@@ -1300,8 +1532,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         if (motionEvent.getAction() == MotionEvent.ACTION_MOVE) {
             nativeOnTrackball(motionEvent.getX(), motionEvent.getY());
             return true; // Signal that we handled it, so its messages don't show up as normal directional presses
-        }
-        else if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+        } else if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
             // They pushed the button
             nativeOnKey(1, VIRTUAL_KEY_TRACKBALL_DOWN, VIRTUAL_KEY_TRACKBALL_DOWN);
             return false;
@@ -1316,7 +1547,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent keyEvent) {
-        Log.v("onKeyDown", "onKeyDown Keydown Got " + keyCode + " " + Character.toChars(keyEvent.getUnicodeChar())[0]);
+        Log.v("onKeyDown",
+            "onKeyDown Keydown Got " + keyCode + " " + Character.toChars(keyEvent.getUnicodeChar())[0]
+        );
         if (keyCode == KeyEvent.KEYCODE_DEL) {
             return true;
         }
@@ -1329,8 +1562,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             // XPeria's O button, not the back button!
             nativeOnKey(1, VIRTUAL_DPAD_BUTTON_RIGHT, keyEvent.getUnicodeChar());
             return true; // Signal that we handled it
-        }
-        else if (keyCode == KeyEvent.KEYCODE_BACK) {
+        } else if (keyCode == KeyEvent.KEYCODE_BACK) {
             nativeOnKey(1, VIRTUAL_KEY_BACK, keyEvent.getUnicodeChar()); // 1 means keydown
             return true; // Signal that we handled it
         }
@@ -1342,7 +1574,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent keyEvent) {
-        Log.v("onKeyUp", "Keyup Got " + keyCode + " " + Character.toChars(keyEvent.getUnicodeChar())[0]);
+        Log.v("onKeyUp",
+            "Keyup Got " + keyCode + " " + Character.toChars(keyEvent.getUnicodeChar())[0]
+        );
         if (keyCode == KeyEvent.KEYCODE_DEL) {
             return true;
         }
@@ -1351,8 +1585,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             // XPeria's O button, not the back button!
             nativeOnKey(0, VIRTUAL_DPAD_BUTTON_RIGHT, keyEvent.getUnicodeChar());
             return true; // Signal that we handled it
-        }
-        else if (keyCode == KeyEvent.KEYCODE_BACK) {
+        } else if (keyCode == KeyEvent.KEYCODE_BACK) {
             nativeOnKey(0, VIRTUAL_KEY_BACK, keyEvent.getUnicodeChar()); // 0 is type keyup
             return true; // Signal that we handled it
         }
@@ -1367,114 +1600,12 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         try {
             PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
             nativeSendGUIStringEx(MESSAGE_TYPE_APP_VERSION, 0, 0, 0, packageInfo.versionName);
-        }
-        catch (PackageManager.NameNotFoundException e) {
+        } catch (PackageManager.NameNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
             Log.d(PackageName, "Cannot load App Version!");
         }
     }
-
-    // TAPJOY
-    /*public void getFullScreenAdResponse() {
-        Log.i(PackageName, "Displaying Full Screen Ad..");
-    }
-
-    public void getFullScreenAdResponseFailed(int error) {
-        Log.i(PackageName, "No Full Screen Ad to display: " + error);
-    }
-
-    public void getDisplayAdResponse(View view) {
-        adView = view;
-
-        int ad_width = adBannerWidth;
-        int ad_height = adBannerHeight;
-
-        if (ad_width == 0) {
-            ad_width = view.getLayoutParams().width;
-        }
-
-        if (ad_height == 0) {
-            ad_height = adView.getLayoutParams().height;
-        }
-
-        Log.d(PackageName, "adView dimensions: " + ad_width + "x" + ad_height);
-
-        int measuredWidth = app.mGLView.getMeasuredWidth();
-        Log.d(PackageName, "mGLView width is " + measuredWidth);
-
-        if (measuredWidth > ad_width) {
-            measuredWidth = ad_width;
-        }
-
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(measuredWidth, (ad_height * measuredWidth) / ad_width);
-        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
-
-        adView.setLayoutParams(layoutParams);
-        Log.v(PackageName, "adLinearLayout dimensions: " + mGLView.getMeasuredWidth() + "x" + mGLView.getMeasuredHeight());
-        nativeSendGUIEx(MESSAGE_TYPE_TAPJOY_AD_READY, 1, 0, 0);
-    }
-
-    public void getDisplayAdResponseFailed(String error) {
-        Log.d(PackageName, "getDisplayAd error: " + error);
-        nativeSendGUIEx(MESSAGE_TYPE_TAPJOY_AD_READY, 0, 0, 0);
-
-        // We must use a handler since we cannot update UI elements from a different thread.
-        // mMainThreadHandler.post(mUpdateResults);
-    }
-
-    // This method must be implemented if using the TapjoyConnect.getTapPoints() method.
-    // It is the callback method which contains the currency and points data.
-    public void getUpdatePoints(String currencyName, int pointTotal) {
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_TAP_POINTS_RETURN, pointTotal, 0, 0, currencyName);
-    }
-
-    // This method must be implemented if using the TapjoyConnect.getTapPoints() method.
-    // It is the callback method which contains the currency and points data.
-    public void getUpdatePointsFailed(String error) {
-        Log.i("growtopia", "getTapPoints error: " + error);
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_TAP_POINTS_RETURN_ERROR, 0, 0, 0, error);
-    }
-
-    // Notifier for when spending virtual currency succeeds.
-    public void getSpendPointsResponse(String currencyName, int pointTotal) {
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_SPEND_TAP_POINTS_RETURN, pointTotal, 0, 0, currencyName);
-    }
-
-    // Notifier for when spending virtual currency fails.
-    public void getSpendPointsResponseFailed(String error) {
-        Log.i("growtopia", "spendTapPoints error: " + error);
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_SPEND_TAP_POINTS_RETURN_ERROR, 0, 0, 0, error);
-    }
-
-    public void getAwardPointsResponse(String currencyName, int pointTotal) {
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_AWARD_TAP_POINTS_RETURN, pointTotal, 0, 0, currencyName);
-    }
-
-    public void getAwardPointsResponseFailed(String error) {
-        Log.i("growtopia", "getAwardPointsResponseFailed: " + error);
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_AWARD_TAP_POINTS_RETURN_ERROR, 0, 0, 0, error);
-    }
-
-    public void earnedTapPoints(int amount) {
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_EARNED_TAP_POINTS, amount, 0, 0, "");
-    }
-
-    public void videoReady() {
-        Log.i("growtopia", "VIDEO READY");
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_MOVIE_AD_READY, 1, 0, 0, "");
-    }
-
-    // Notifier when a video ad starts.
-    public void videoStart() {
-        Log.i("growtopia", "VIDEO START");
-    }
-
-    public void videoComplete() {
-        Log.i("growtopia", "VIDEO COMPLETE");
-        nativeSendGUIStringEx(MESSAGE_TYPE_TAPJOY_MOVIE_AD_READY, 2, 0, 0, "");
-    }*/
 
     public void requestPlacementAndShow(String placementName) {
         Tapjoy.setActivity(app);
@@ -1484,7 +1615,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             public void onRequestSuccess(TJPlacement tJPlacement) {
                 Log.d(getPackageName(), "onRequestSuccess for placement " + tJPlacement.getName());
                 if (!tJPlacement.isContentAvailable()) {
-                    Log.d(getPackageName(), "No content available for placement " + tJPlacement.getName());
+                    Log.d(getPackageName(),
+                        "No content available for placement " + tJPlacement.getName()
+                    );
                     nativeSendGUIEx(MESSAGE_TYPE_TAPJOY_AD_READY, 0, 0, 0);
                     makeToastUI("No video content is available for your device.");
                     return;
@@ -1501,7 +1634,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
             @Override
             public void onRequestFailure(TJPlacement tJPlacement, TJError tJError) {
-                Log.d(getPackageName(), "onRequestFailure for placement " + tJPlacement.getName() + " -- error: " + tJError.message);
+                Log.d(getPackageName(),
+                    "onRequestFailure for placement " + tJPlacement.getName() + " -- error: " + tJError.message
+                );
                 if (nDialog != null && nDialog.isShowing()) {
                     nDialog.dismiss();
                 }
@@ -1524,7 +1659,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
             @Override
             public void onContentShow(TJPlacement tJPlacement) {
-                TapjoyLog.i(getPackageName(), "onContentShow for placement " + tJPlacement.getName());
+                TapjoyLog.i(getPackageName(),
+                    "onContentShow for placement " + tJPlacement.getName()
+                );
                 if (nDialog != null && nDialog.isShowing()) {
                     nDialog.dismiss();
                 }
@@ -1532,7 +1669,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
             @Override
             public void onContentDismiss(TJPlacement tJPlacement) {
-                TapjoyLog.i(getPackageName(), "onContentDismiss for placement " + tJPlacement.getName());
+                TapjoyLog.i(getPackageName(),
+                    "onContentDismiss for placement " + tJPlacement.getName()
+                );
                 if (nDialog != null && nDialog.isShowing()) {
                     nDialog.dismiss();
                 }
@@ -1541,12 +1680,16 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             }
 
             @Override
-            public void onPurchaseRequest(TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str) {
+            public void onPurchaseRequest(
+                TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str
+            ) {
                 TapjoyLog.i(getPackageName(), "onPurchaseRequest " + tJPlacement.getName());
             }
 
             @Override
-            public void onRewardRequest(TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str, int i) {
+            public void onRewardRequest(
+                TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str, int i
+            ) {
                 TapjoyLog.i(getPackageName(), "onRewardRequest " + tJPlacement.getName());
             }
 
@@ -1560,15 +1703,13 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             tJPlacement.setVideoListener(app);
             Log.d(getPackageName(), "requestPlacementAndShow:Requesting placement content");
             tJPlacement.requestContent();
-        }
-        else {
+        } else {
             Log.e(getPackageName(), "Tapjoy SDK must finish connecting before requesting content.");
         }
 
         if (placementName.equals("Sub_01")) {
             tapjoyAdPlacementForSub01 = tJPlacement;
-        }
-        else if (placementName.equals("GROW_GGP_V4VC_TV")) {
+        } else if (placementName.equals("GROW_GGP_V4VC_TV")) {
             tapjoyAdPlacementForTV = tJPlacement;
         }
     }
@@ -1581,14 +1722,18 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             public void onRequestSuccess(TJPlacement tJPlacement) {
                 Log.d(getPackageName(), "onRequestSuccess for placement " + tJPlacement.getName());
                 if (!tJPlacement.isContentAvailable()) {
-                    Log.d(getPackageName(), "No content available for placement " + tJPlacement.getName());
+                    Log.d(getPackageName(),
+                        "No content available for placement " + tJPlacement.getName()
+                    );
                     nativeSendGUIEx(MESSAGE_TYPE_TAPJOY_AD_READY, 0, 0, 0);
                 }
             }
 
             @Override
             public void onRequestFailure(TJPlacement tJPlacement, TJError tJError) {
-                Log.d(getPackageName(), "onRequestFailure for placement " + tJPlacement.getName() + " -- error: " + tJError.message);
+                Log.d(getPackageName(),
+                    "onRequestFailure for placement " + tJPlacement.getName() + " -- error: " + tJError.message
+                );
             }
 
             @Override
@@ -1598,22 +1743,30 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
             @Override
             public void onContentShow(TJPlacement tJPlacement) {
-                TapjoyLog.i(getPackageName(), "onContentShow for placement " + tJPlacement.getName());
+                TapjoyLog.i(getPackageName(),
+                    "onContentShow for placement " + tJPlacement.getName()
+                );
             }
 
             @Override
             public void onContentDismiss(TJPlacement tJPlacement) {
-                TapjoyLog.i(getPackageName(), "onContentDismiss for placement " + tJPlacement.getName());
+                TapjoyLog.i(getPackageName(),
+                    "onContentDismiss for placement " + tJPlacement.getName()
+                );
                 Tapjoy.getCurrencyBalance(app);
             }
 
             @Override
-            public void onPurchaseRequest(TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str) {
+            public void onPurchaseRequest(
+                TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str
+            ) {
                 TapjoyLog.i(getPackageName(), "onPurchaseRequest " + tJPlacement.getName());
             }
 
             @Override
-            public void onRewardRequest(TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str, int i) {
+            public void onRewardRequest(
+                TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str, int i
+            ) {
                 TapjoyLog.i(getPackageName(), "onRewardRequest " + tJPlacement.getName());
             }
 
@@ -1626,15 +1779,13 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         if (Tapjoy.isConnected()) {
             tJPlacement.setVideoListener(app);
             Log.d(getPackageName(), "requestPlacementAndShow:Requesting placement content");
-        }
-        else {
+        } else {
             Log.e(getPackageName(), "Tapjoy SDK must finish connecting before requesting content.");
         }
 
         if (placementName.equals("Sub_01")) {
             tapjoyAdPlacementForSub01 = tJPlacement;
-        }
-        else if (placementName.equals("GROW_GGP_V4VC_TV")) {
+        } else if (placementName.equals("GROW_GGP_V4VC_TV")) {
             tapjoyAdPlacementForTV = tJPlacement;
         }
     }
@@ -1647,7 +1798,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             public void onRequestSuccess(TJPlacement tJPlacement) {
                 Log.d(getPackageName(), "onRequestSuccess for placement " + tJPlacement.getName());
                 if (!tJPlacement.isContentAvailable()) {
-                    Log.d(getPackageName(), "No content available for placement " + tJPlacement.getName());
+                    Log.d(getPackageName(),
+                        "No content available for placement " + tJPlacement.getName()
+                    );
                     nativeSendGUIEx(MESSAGE_TYPE_TAPJOY_MOVIE_AD_READY, 0, 0, 0);
                     return;
                 }
@@ -1663,7 +1816,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
             @Override
             public void onRequestFailure(TJPlacement tJPlacement, TJError tJError) {
-                Log.d(getPackageName(), "onRequestFailure for placement " + tJPlacement.getName() + " -- error: " + tJError.message);
+                Log.d(getPackageName(),
+                    "onRequestFailure for placement " + tJPlacement.getName() + " -- error: " + tJError.message
+                );
                 if (oDialog != null && oDialog.isShowing()) {
                     oDialog.dismiss();
                 }
@@ -1686,7 +1841,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
             @Override
             public void onContentShow(TJPlacement tJPlacement) {
-                TapjoyLog.i(getPackageName(), "onContentShow for placement " + tJPlacement.getName());
+                TapjoyLog.i(getPackageName(),
+                    "onContentShow for placement " + tJPlacement.getName()
+                );
                 if (oDialog != null && oDialog.isShowing()) {
                     oDialog.dismiss();
                 }
@@ -1694,7 +1851,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
             @Override
             public void onContentDismiss(TJPlacement tJPlacement) {
-                TapjoyLog.i(getPackageName(), "onContentDismiss for placement " + tJPlacement.getName());
+                TapjoyLog.i(getPackageName(),
+                    "onContentDismiss for placement " + tJPlacement.getName()
+                );
                 if (oDialog != null && oDialog.isShowing()) {
                     oDialog.dismiss();
                 }
@@ -1703,12 +1862,16 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             }
 
             @Override
-            public void onPurchaseRequest(TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str) {
+            public void onPurchaseRequest(
+                TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str
+            ) {
                 TapjoyLog.i(getPackageName(), "onPurchaseRequest " + tJPlacement.getName());
             }
 
             @Override
-            public void onRewardRequest(TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str, int i) {
+            public void onRewardRequest(
+                TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str, int i
+            ) {
                 TapjoyLog.i(getPackageName(), "onRewardRequest " + tJPlacement.getName());
             }
 
@@ -1722,8 +1885,7 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             offerwallPlacement.setVideoListener(app);
             Log.d(getPackageName(), "requestOfferwallAndShow:Requesting placement content");
             offerwallPlacement.requestContent();
-        }
-        else {
+        } else {
             Log.e(getPackageName(), "Tapjoy SDK must finish connecting before requesting content.");
         }
     }
@@ -1736,14 +1898,18 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             public void onRequestSuccess(TJPlacement tJPlacement) {
                 Log.d(getPackageName(), "onRequestSuccess for placement " + tJPlacement.getName());
                 if (!tJPlacement.isContentAvailable()) {
-                    Log.d(getPackageName(), "No content available for placement " + tJPlacement.getName());
+                    Log.d(getPackageName(),
+                        "No content available for placement " + tJPlacement.getName()
+                    );
                     nativeSendGUIEx(MESSAGE_TYPE_TAPJOY_MOVIE_AD_READY, 0, 0, 0);
                 }
             }
 
             @Override
             public void onRequestFailure(TJPlacement tJPlacement, TJError tJError) {
-                Log.d(getPackageName(), "onRequestFailure for placement " + tJPlacement.getName() + " -- error: " + tJError.message);
+                Log.d(getPackageName(),
+                    "onRequestFailure for placement " + tJPlacement.getName() + " -- error: " + tJError.message
+                );
             }
 
             @Override
@@ -1753,22 +1919,30 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
             @Override
             public void onContentShow(TJPlacement tJPlacement) {
-                TapjoyLog.i(getPackageName(), "onContentShow for placement " + tJPlacement.getName());
+                TapjoyLog.i(getPackageName(),
+                    "onContentShow for placement " + tJPlacement.getName()
+                );
             }
 
             @Override
             public void onContentDismiss(TJPlacement tJPlacement) {
-                TapjoyLog.i(getPackageName(), "onContentDismiss for placement " + tJPlacement.getName());
+                TapjoyLog.i(getPackageName(),
+                    "onContentDismiss for placement " + tJPlacement.getName()
+                );
                 Tapjoy.getCurrencyBalance(app);
             }
 
             @Override
-            public void onPurchaseRequest(TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str) {
+            public void onPurchaseRequest(
+                TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str
+            ) {
                 TapjoyLog.i(getPackageName(), "onPurchaseRequest " + tJPlacement.getName());
             }
 
             @Override
-            public void onRewardRequest(TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str, int i) {
+            public void onRewardRequest(
+                TJPlacement tJPlacement, TJActionRequest tJActionRequest, String str, int i
+            ) {
                 TapjoyLog.i(getPackageName(), "onRewardRequest " + tJPlacement.getName());
             }
 
@@ -1781,15 +1955,16 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         if (Tapjoy.isConnected()) {
             offerwallPlacement.setVideoListener(app);
             Log.d(getPackageName(), "requestOfferwall:Requesting placement content");
-        }
-        else {
+        } else {
             Log.e(getPackageName(), "Tapjoy SDK must finish connecting before requesting content.");
         }
     }
 
     @Override
     public void onGetCurrencyBalanceResponse(String currencyName, int balance) {
-        Log.d(getPackageName(), "onGetCurrencyBalanceResponse currencyName: " + currencyName + ", balance: " + balance);
+        Log.d(getPackageName(),
+            "onGetCurrencyBalanceResponse currencyName: " + currencyName + ", balance: " + balance
+        );
     }
 
     @Override
@@ -1804,7 +1979,9 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
 
     @Override
     public void onVideoError(TJPlacement tJPlacement, String statusCode) {
-        Log.e(getPackageName(), "onVideoError TJPlacement: " + tJPlacement + ", statusCode: " + statusCode);
+        Log.e(getPackageName(),
+            "onVideoError TJPlacement: " + tJPlacement + ", statusCode: " + statusCode
+        );
     }
 
     @Override
@@ -1828,12 +2005,6 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             }
         });
     }
-    //***************************
-
-    //************** SOUND STUFF *************
-
-    // JNI to play music, etc
-    public MediaPlayer _music = null;
 
     private static class MusicFadeOutThread extends Thread {
         private final int m_duration;
@@ -1848,17 +2019,16 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
             final int totalSteps = m_duration / volumeChangeInterval;
             int remainingSteps = totalSteps;
 
-            while (remainingSteps  > 0) {
+            while (remainingSteps > 0) {
                 synchronized (app._music) {
-                    float phase  = (float) remainingSteps  / (float) totalSteps;
-                    app._music.setVolume(phase  * m_lastMusicVol, phase  * m_lastMusicVol);
+                    float phase = (float) remainingSteps / (float) totalSteps;
+                    app._music.setVolume(phase * m_lastMusicVol, phase * m_lastMusicVol);
                     remainingSteps--;
                 }
 
                 try {
                     Thread.sleep(volumeChangeInterval);
-                }
-                catch (InterruptedException unused) {
+                } catch (InterruptedException unused) {
                     return;
                 }
             }
@@ -1870,265 +2040,46 @@ public class SharedActivity extends Activity implements SensorEventListener, TJG
         }
     }
 
-    private MusicFadeOutThread musicFadeOutThread = null;
-
-    public static synchronized void music_play(String fname, boolean looping) {
-        if (app._music != null) {
-            app._music.reset();
-        }
-        else {
-            app._music = new MediaPlayer();
+    private class MyLicenseCheckerCallback implements LicenseCheckerCallback {
+        private MyLicenseCheckerCallback() {
+            super();
         }
 
-        if (fname.charAt(0) == '/') {
-            // Load as raw, not an asset
-            try {
-                FileInputStream fileInputStream = new FileInputStream(fname);
-                app._music.setDataSource(fileInputStream.getFD());
-                fileInputStream.close();
-                app._music.setLooping(looping);
-                app._music.prepare();
-                music_set_volume(m_lastMusicVol);
-                app._music.start();
-            }
-            catch (IOException unused) {
-                String packageName = app.getPackageName();
-                Log.d(packageName, "Can't load music (raw) filename: " + fname);
-            }
-            catch (IllegalStateException unused2) {
-                String packageName2 = app.getPackageName();
-                Log.d(packageName2, "Can't load music (raw), illegal state filename: " + fname);
-                app._music.reset();
-            }
-            return;
-        }
-
-        try {
-            Context growtopiaContext = app.createPackageContext("com.rtsoft.growtopia", 0);
-            AssetFileDescriptor openFd = growtopiaContext.getAssets().openFd(fname);
-            app._music.setDataSource(openFd.getFileDescriptor(), openFd.getStartOffset(), openFd.getLength());
-            openFd.close();
-            app._music.setLooping(looping);
-            app._music.prepare();
-            music_set_volume(m_lastMusicVol);
-            app._music.start();
-        }
-        catch (IOException unused3) {
-            Log.d(app.getPackageName(), "Can't load music. filename: " + fname);
-        }
-        catch (IllegalStateException unused4) {
-            Log.d(app.getPackageName(), "Can't load music, illegal state. filename: " + fname);
-            app._music.reset();
-        }
-        catch (PackageManager.NameNotFoundException e) {
-            Log.d(app.getPackageName(), "Can't load music, Growtopia assets not found? filename: " + fname);
-        }
-    }
-
-    public static synchronized void music_stop() {
-        if (app._music != null) {
-            if (app.musicFadeOutThread != null && app.musicFadeOutThread.isAlive()) {
-                try {
-                    app.musicFadeOutThread.interrupt();
-                    app.musicFadeOutThread.join();
-                }
-                catch (InterruptedException unused) {
-                    /* ~ */
-                }
+        @Override
+        public void allow(int reason) {
+            Log.v("allow()", "Allow the user access");
+            if (isFinishing()) {
+                // Don't update UI if Activity is finishing.
             }
 
-            app._music.stop();
-        }
-    }
-
-    public static synchronized void music_fadeout(int duration) {
-        if (app._music != null && app._music.isPlaying()) {
-            if (duration <= 0) {
-                music_stop();
-            }
-            else if (app.musicFadeOutThread == null || !app.musicFadeOutThread.isAlive()) {
-                app.musicFadeOutThread = new MusicFadeOutThread(duration);
-                app.musicFadeOutThread.start();
-            }
-        }
-    }
-
-    public static synchronized void music_set_volume(float v) {
-        if (app._music != null) {
-            m_lastMusicVol = v;
-            app._music.setVolume(v, v);
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    public static synchronized void vibrate(int vibMS) {
-        Vibrator vibrator = ((Vibrator) app.getSystemService(Context.VIBRATOR_SERVICE));
-        if (vibrator != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(vibMS, VibrationEffect.DEFAULT_AMPLITUDE));
-            } else {
-                // Deprecated in API 26
-                vibrator.vibrate(vibMS);
-            }
-        }
-    }
-
-    public static synchronized int music_get_pos() {
-        if (app._music == null) {
-            return 0;
-        }
-        return app._music.getCurrentPosition();
-    }
-
-    public static synchronized boolean music_is_playing() {
-        if (app._music == null) {
-            return false;
-        }
-        return app._music.isPlaying();
-    }
-
-    public static synchronized void music_set_pos(int positionMS) {
-        if (app._music == null) {
-            Log.d(app.getPackageName(), "warning: music_set_position: no music playing, can't set position");
-            return;
+            // Should allow user access.
+            // displayResult(getString(R.string.allow));
         }
 
-        app._music.seekTo(positionMS);
-    }
+        @Override
+        public void dontAllow(int reason) {
+            Log.v("dontAllow()", "Don't allow the user access");
+            is_demo = true;
 
-    // JNI to play sounds
-    public SoundPool _sounds = null;
-
-    public static synchronized void sound_init() {
-        if (app._sounds == null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_GAME)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build();
-
-                app._sounds = new SoundPool.Builder()
-                        .setAudioAttributes(audioAttributes)
-                        .setMaxStreams(8)
-                        .build();
-
+            if (isFinishing()) {
+                // Don't update UI if Activity is finishing.
                 return;
             }
 
-            app._sounds = new SoundPool(8, AudioManager.STREAM_MUSIC, 1);
-        }
-    }
-
-    public static synchronized void sound_destroy() {
-        if (app._sounds != null) {
-            app._sounds.release();
-            app._sounds = null;
-        }
-    }
-
-    public static synchronized int sound_load(String sound) {
-        if (app._sounds == null) {
-            sound_init();
+            // In this example, we show a dialog that takes the user to Market.
+            new Dialog(app).dismiss();
         }
 
-        if (sound.charAt(0) == '/') {
-            // Must be a raw file on the disc, not in the assets.  load differently
-            return app._sounds.load(sound, 1);
-        }
+        @Override
+        public void applicationError(int applicationErrorCode) {
+            Log.v("applicationError",
+                String.format("Application error: %1$s", applicationErrorCode)
+            );
+            dontAllow(applicationErrorCode);
 
-        try {
-            Context growtopiaContext = app.createPackageContext("com.rtsoft.growtopia", 0);
-            AssetFileDescriptor openFd = growtopiaContext.getAssets().openFd(sound);
-            return app._sounds.load(openFd.getFileDescriptor(), openFd.getStartOffset(), openFd.getLength(), 1);
-        }
-        catch (IOException unused) {
-            Log.d("Can't load sound", sound);
-        }
-        catch (PackageManager.NameNotFoundException unused2) {
-            Log.d("Can't load sound", "Growtopia assets not found? sound: " + sound);
-        }
-
-        return 0;
-    }
-
-    public static synchronized int sound_play(int soundID, float leftVol, float rightVol, int priority, int loop, float speedMod) {
-        if (app._sounds == null) {
-            sound_init();
-        }
-
-        return app._sounds.play(soundID, leftVol, rightVol, priority, loop, speedMod);
-    }
-
-    public static void sound_kill(int streamID) {
-        if (app._sounds == null) {
-            sound_init();
-        }
-
-        app._sounds.unload(streamID);
-    }
-
-    public static void sound_stop(int streamID) {
-        if (app._sounds == null) {
-            sound_init();
-        }
-
-        app._sounds.stop(streamID);
-    }
-
-    public static void sound_set_vol(int streamID, float left, float right) {
-        if (app._sounds == null) {
-            sound_init();
-        }
-
-        app._sounds.setVolume(streamID, left, right);
-    }
-
-    public static void sound_set_rate(int streamID, float rate) {
-        if (app._sounds == null) {
-            sound_init();
-        }
-
-        app._sounds.setRate(streamID, rate);
-    }
-
-    public static void _OpenCSTS(String cstsuid, String country, String language, boolean payer,
-                                 String ingameplayerid, String environment, String misc) {
-        Intent intent = new Intent(app.getApplicationContext(), CSTSWebViewActivity.class);
-        intent.putExtra("cstsuid", cstsuid);
-        intent.putExtra("country", country);
-        intent.putExtra("language", language);
-        intent.putExtra("payer", payer);
-        intent.putExtra("ingameplayerid", ingameplayerid);
-        intent.putExtra("environment", environment);
-        intent.putExtra("misc", misc);
-        app.startActivity(intent);
-    }
-
-    public String getExtractedLibraryPath() {
-        String extractedPath = getExternalFilesDir(null).getAbsolutePath() + "/extracted";
-        String libPath = extractedPath + "/lib";
-        String[] libAbi = { "armeabi-v7a", "arm64-v8a" };
-        for (String abi : libAbi) {
-            File libAbiPath = new File(libPath + "/" + abi);
-            if (libAbiPath.exists()) {
-                return libAbiPath.getAbsolutePath();
+            if (isFinishing()) {
+                // Don't update UI if Activity is finishing.
             }
         }
-        return "";
     }
-
-    public GLSurfaceView mGLView;
-    public RelativeLayout mViewGroup;
-    public static native void nativeOnKey(int type, int keycode, int c);
-    public static native void nativeOnTrackball(float x, float y);
-    public static native void nativeOnAccelerometerUpdate(float x, float y, float z);
-    public static native void nativeSendGUIEx(int messageType, int parm1, int parm2, int finger);
-    public static native void nativeSendGUIStringEx(int messageType, int parm1, int parm2, int finger, String s);
-    public static native void nativeCancelBtnPressed();
-    public static native int nativeGetChatString();
-    public static native float nativeGetEditBoxOffset();
-    public static native float nativeGetScreenHeight();
-    public static native float nativeGetScreenWidth();
-    public static native void nativeInitActivity(Activity activity);
-    public static native void nativeUpdateConsoleLogPos(float f);
 }

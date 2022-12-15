@@ -20,19 +20,7 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--verbose
--flattenpackagehierarchy
-
 #
--keep,includedescriptorclasses class com.google.android.gms.** { *; }
--keep,includedescriptorclasses class com.google.android.gms.internal.** { *; }
--keep class com.google.android.gms.internal.** { com.google.android.gms.internal.** initialize(android.content.Context); }
--keep class com.google.android.gms.iid.** { com.google.android.gms.iid.** get(java.lang.String); }
--keep,includedescriptorclasses class com.google.android.** { *; }
-
-#
--keepattributes InnerClasses
--keep class com.rtsoft.growtopia.**
--keepclassmembers class com.rtsoft.growtopia.** { *; }
--keep class com.anzu.sdk.**
--keepclassmembers class com.anzu.sdk.** { *; }
+-keep class com.appsflyer.** { *; }
+-keep public class com.android.installreferrer.** { *; }
+-keep public class com.miui.referrer.** {*;}
