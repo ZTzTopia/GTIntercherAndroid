@@ -7,13 +7,9 @@ import java.util.ListIterator;
 
 // Tricks for being compatible with Android 1.5 but still being able to use new features of 2.2
 public class SharedMultiTouchInput {
-    static class TouchInfo {
-        int fingerID;
-        public int pointerID;
-    }
-
     public static SharedActivity app;
     static LinkedList<TouchInfo> listTouches;
+
     public static void init(SharedActivity sharedActivity) {
         app = sharedActivity;
         listTouches = new LinkedList<>();
@@ -37,6 +33,7 @@ public class SharedMultiTouchInput {
             // Guess we failed, try again
             fingerID++;
         }
+
         return fingerID;
     }
 
@@ -74,11 +71,6 @@ public class SharedMultiTouchInput {
             RemoveFinger(id);
         }
 
-        if (app.inFloatingMode) {
-            x *= 2.5f;
-            y *= 2.25f;
-        }
-
         AppGLSurfaceView.nativeOnTouch(msg, x, y, fingerID);
     }
 
@@ -89,18 +81,38 @@ public class SharedMultiTouchInput {
         switch (actionMasked) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_UP:
-                SharedMultiTouchInput.processMouse(actionMasked, motionEvent.getX(actionIndex), motionEvent.getY(actionIndex), motionEvent.getPointerId(actionIndex));
+                SharedMultiTouchInput.processMouse(
+                    actionMasked,
+                    motionEvent.getX(actionIndex),
+                    motionEvent.getY(actionIndex),
+                    motionEvent.getPointerId(actionIndex)
+                );
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
-                SharedMultiTouchInput.processMouse(MotionEvent.ACTION_DOWN, motionEvent.getX(actionIndex), motionEvent.getY(actionIndex), motionEvent.getPointerId(actionIndex));
+                SharedMultiTouchInput.processMouse(
+                    MotionEvent.ACTION_DOWN,
+                    motionEvent.getX(actionIndex),
+                    motionEvent.getY(actionIndex),
+                    motionEvent.getPointerId(actionIndex)
+                );
                 break;
             case MotionEvent.ACTION_POINTER_UP:
-                SharedMultiTouchInput.processMouse(MotionEvent.ACTION_UP, motionEvent.getX(actionIndex), motionEvent.getY(actionIndex), motionEvent.getPointerId(actionIndex));
+                SharedMultiTouchInput.processMouse(
+                    MotionEvent.ACTION_UP,
+                    motionEvent.getX(actionIndex),
+                    motionEvent.getY(actionIndex),
+                    motionEvent.getPointerId(actionIndex)
+                );
                 break;
             case MotionEvent.ACTION_MOVE: {
                 int pointerCount = 0;
                 while (pointerCount < motionEvent.getPointerCount()) {
-                    SharedMultiTouchInput.processMouse(actionMasked, motionEvent.getX(pointerCount), motionEvent.getY(pointerCount), motionEvent.getPointerId(pointerCount));
+                    SharedMultiTouchInput.processMouse(
+                        actionMasked,
+                        motionEvent.getX(pointerCount),
+                        motionEvent.getY(pointerCount),
+                        motionEvent.getPointerId(pointerCount)
+                    );
                     pointerCount++;
                 }
                 break;
@@ -114,5 +126,10 @@ public class SharedMultiTouchInput {
                 return false;
         }
         return true;
+    }
+
+    static class TouchInfo {
+        public int pointerID;
+        int fingerID;
     }
 }
