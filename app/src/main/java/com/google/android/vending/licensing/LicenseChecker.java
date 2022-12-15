@@ -16,6 +16,8 @@
 
 package com.google.android.vending.licensing;
 
+import com.android.vending.licensing.ILicenseResultListener;
+import com.android.vending.licensing.ILicensingService;
 import com.google.android.vending.licensing.util.Base64;
 import com.google.android.vending.licensing.util.Base64DecoderException;
 
