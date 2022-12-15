@@ -22,7 +22,7 @@ The following dependencies are required to build from source.
 - [Android Studio](https://developer.android.com/studio).
 
 ## Build
-1. First you need to clone the source code of this project. `git clone https://github.com/ZTzTopia/GLauncherAndroid.git`
+1. First you need to clone the source code of this project. `git clone --recurse-submodules https://github.com/ZTzTopia/GLauncherAndroid.git`
 2. Then open it via [Android Studio](https://developer.android.com/studio).
 2. When you click the `▶ Run button`, it will be built and run automatically.
 > **Note**: Building this source from android will most likely work but I haven't tried it so feel free to experiment yourself :)
