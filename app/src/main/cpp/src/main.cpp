@@ -1,9 +1,6 @@
 #include <chrono>
 #include <thread>
-#include <unistd.h>
-#include <android/log.h>
 #include <dlfcn.h>
-#include <pthread.h>
 
 #include "game/hook.h"
 

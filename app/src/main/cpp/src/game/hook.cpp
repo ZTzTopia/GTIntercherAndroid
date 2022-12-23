@@ -1,12 +1,11 @@
 #include <cstdio>
 #include <cstring>
-#include <dlfcn.h>
 #include <android/log.h>
 #include <dobby.h>
 
 // Fix for printing blank message in the console.
-void (*LogMsg)(const char *, ...);
-void LogMsg_hook(const char *msg, ...) {
+void (*LogMsg)(const char*, ...);
+void LogMsg_hook(const char* msg, ...) {
     if (msg[0] == '\0') {
         return;
     }
@@ -24,7 +23,7 @@ void LogMsg_hook(const char *msg, ...) {
 
     __android_log_print(
         ANDROID_LOG_INFO,
-        reinterpret_cast<const char* (__cdecl *)()>(DobbySymbolResolver(nullptr, "_Z10GetAppNamev"))(),
+        reinterpret_cast<const char* (__cdecl*)()>(DobbySymbolResolver(nullptr, "_Z10GetAppNamev"))(),
         "%s", buffer
     );
 }
@@ -42,5 +41,5 @@ namespace game {
                 (dobby_dummy_func_t*)&LogMsg
             );
         }
-    } // namespace hook
-} // namespace game
+    }
+}
