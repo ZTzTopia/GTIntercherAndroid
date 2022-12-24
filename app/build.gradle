@@ -44,10 +44,6 @@ android {
             path file('src/main/cpp/CMakeLists.txt')
         }
     }
-
-    lint {
-        baseline = file("lint-baseline.xml")
-    }
 }
 
 dependencies {
