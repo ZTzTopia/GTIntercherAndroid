@@ -28,17 +28,30 @@ void LogMsg_hook(const char* msg, ...) {
     );
 }
 
+// Fix for 0ms timeout causing game lag.
+int (*enet_host_service)(void*, void*, uint32_t);
+int enet_host_service_hook(void* host, void* event, uint32_t timeout) {
+    return enet_host_service(host, event, timeout != 0 ? timeout : 16);
+}
+
 namespace game {
     namespace hook {
         void init() {
             // set Dobby logging level.
             log_set_level(0);
 
-            // LogMsg()
+            // LogMsg(char const*,...)
             DobbyHook(
                 DobbySymbolResolver(nullptr, "_Z6LogMsgPKcz"),
                 (dobby_dummy_func_t)LogMsg_hook,
                 (dobby_dummy_func_t*)&LogMsg
+            );
+
+            // enet_host_service
+            DobbyHook(
+                DobbySymbolResolver(nullptr, "enet_host_service"),
+                (dobby_dummy_func_t)enet_host_service_hook,
+                (dobby_dummy_func_t*)&enet_host_service
             );
         }
     }

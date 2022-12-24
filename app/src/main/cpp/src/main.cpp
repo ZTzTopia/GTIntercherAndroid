@@ -14,7 +14,7 @@ void constructor_main() {
             std::this_thread::sleep_for(std::chrono::milliseconds{ 32 });
         } while (dlopen("libgrowtopia.so", RTLD_NOLOAD) == nullptr);
 
-        // Starting hook Growtopia function.
+        // Starting to hook Growtopia function.
         game::hook::init();
     });
 
