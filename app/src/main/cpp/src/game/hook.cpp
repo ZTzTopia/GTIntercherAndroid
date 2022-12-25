@@ -46,6 +46,27 @@ INSTALL_HOOK_NO_LIB(enet_host_service, int, void* host, void* event, uint32_t ti
     return orig_enet_host_service(host, event, timeout != 0 ? timeout : 16);
 }
 
+struct BoostSignal {
+    void* pad; // 0
+    void* pad2; // 8
+    void* pad3; // 16
+    // ARM64 size!
+};
+
+struct BaseApp {
+    BoostSignal pad[18]; // 0
+    void* pad2; // 432
+    bool consoleVisible; // 440
+    bool fpsVisible; // 441
+    // ARM64 size!
+};
+
+INSTALL_HOOK_NO_LIB(_ZN7BaseApp4DrawEv, void, BaseApp* v1)
+{
+    v1->fpsVisible = true;
+    orig__ZN7BaseApp4DrawEv(v1);
+}
+
 namespace game {
     namespace hook {
         void init()
@@ -58,6 +79,9 @@ namespace game {
 
             // enet_host_service
             install_hook_enet_host_service();
+
+            // BaseApp::Draw(void)
+            install_hook__ZN7BaseApp4DrawEv();
         }
     }
 }
