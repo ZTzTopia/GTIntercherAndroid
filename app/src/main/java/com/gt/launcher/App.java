@@ -9,20 +9,17 @@ import android.util.Log;
 import java.util.Arrays;
 
 public class App extends Application {
+    // Package string (with method name) to rename package to Growtopia package name.
     final static String[] CHANGE_PACKAGE_NAMES = {
         "com.appsflyer.internal",
         "com.gt.launcher.App.getAssets"
     };
 
+    // Package string (with method name) to use Growtopia assets.
     final static String[] CHANGE_ASSETS = {
         "com.rtsoft.growtopia.SharedActivity.music_play",
         "com.rtsoft.growtopia.SharedActivity.sound_load"
     };
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-    }
 
     @Override
     public String getPackageName() {
@@ -53,7 +50,7 @@ public class App extends Application {
                     Context context = createPackageContext(getPackageName(), 0);
                     return context.getAssets();
                 } catch (PackageManager.NameNotFoundException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
             }
         }
