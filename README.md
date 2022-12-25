@@ -10,9 +10,13 @@ Android 5.0 Lollipop (SDK 21) ~ 13 Tiramisu (SDK 33)
 - Floating Windows.
 
 ## Screenshot
-|                   Main Menu                   |                   Floating Windows                   |
-|:---------------------------------------------:|:----------------------------------------------------:|
-| ![Main Menu](https://i.imgur.com/8gNwiQw.png) | ![Floating Windows](https://i.imgur.com/WOT5aEf.png) |
+|                       Main Menu                        |
+|:------------------------------------------------------:|
+|     ![Main Menu](https://i.imgur.com/8gNwiQw.png)      |
+
+|                    Floating Windows                    |
+|:------------------------------------------------------:|
+|  ![Floating Windows](https://i.imgur.com/WOT5aEf.png)  |
 
 ## Download
 The latest application package kit can be found on the [releases page](https://github.com/ZTzTopia/GLauncherAndroid/releases).
