@@ -40,3 +40,8 @@ jobs:
 
       - name: Assemble debug with Gradle
         run: ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: GTLauncher
+          path: app/build/outputs/apk/debug/
