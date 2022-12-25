@@ -2,6 +2,18 @@ plugins {
     id 'com.android.application'
 }
 
+def baseVersionName = "1.0.0-alpha01"
+def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
+def shortRev = "git rev-parse --short HEAD".execute().text.toString().trim()
+def isDevBuild = "git tag -l ${baseVersionName}".execute().text.isEmpty()
+
+def genVersionCode = "git rev-list --count HEAD".execute().text.toInteger()
+def genVersionName =
+        // 1.0.0.deadbeef
+        // 1.0.0.dev.deadbeef
+        // 1.0.0.dev.deadbeef.27
+        "${baseVersionName}${isDevBuild ? ".dev" : ""}.${shortRev}${ciRunNumber ? ".${ciRunNumber}" : ""}"
+
 android {
     compileSdk 33
     namespace "com.gt.launcher"
@@ -10,8 +22,8 @@ android {
         applicationId "com.gt.launcher"
         minSdk 21
         targetSdk 33
-        versionCode 11
-        versionName "1.0.0-alpha01"
+        versionCode genVersionCode
+        versionName "${genVersionName}"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -42,6 +54,16 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
+        }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            // GTLauncher-1.0.0.deadbeef
+            // GTLauncher-1.0.0.dev.deadbeef
+            // GTLauncher-1.0.0.dev.deadbeef.27
+            // GTLauncher-1.0.0.deadbeef-release
+            outputFileName = new File("GTLauncher-${genVersionName}-${isDevBuild ? "" : variant.buildType.name}.apk")
         }
     }
 }
