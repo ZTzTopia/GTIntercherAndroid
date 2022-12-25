@@ -1,5 +1,5 @@
 # GTLauncherAndroid
-**GTLauncherAndroid** is a [Growtopia](https://www.growtopiagame.com/) launcher LiKE nO oThER. Without having to update the launcher if the game is updated.
+**GTLauncherAndroid** is a [Growtopia](https://www.growtopiagame.com/) launcher **LiKE nO oThER**. Without having to update the launcher if the game is updated.
 
 ## Supported Android Version
 Android 5.0 Lollipop (SDK 21) ~ 13 Tiramisu (SDK 33)
@@ -10,9 +10,9 @@ Android 5.0 Lollipop (SDK 21) ~ 13 Tiramisu (SDK 33)
 - Floating Windows.
 
 ## Screenshot
-|                                               Main Menu                                                |                                               Floating Windows                                                |
-|:------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------:|
-| ![Main Menu](https://cdn.discordapp.com/attachments/488978346072604682/916262099997581342/unknown.png) | ![Floating Windows](https://cdn.discordapp.com/attachments/488978346072604682/916261969798004736/unknown.png) |
+|                   Main Menu                   |                   Floating Windows                   |
+|:---------------------------------------------:|:----------------------------------------------------:|
+| ![Main Menu](https://i.imgur.com/8gNwiQw.png) | ![Floating Windows](https://i.imgur.com/WOT5aEf.png) |
 
 ## Download
 The latest application package kit can be found on the [releases page](https://github.com/ZTzTopia/GLauncherAndroid/releases).
