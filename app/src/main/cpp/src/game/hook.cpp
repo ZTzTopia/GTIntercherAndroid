@@ -3,9 +3,21 @@
 #include <android/log.h>
 #include <dobby.h>
 
+#define INSTALL_HOOK(lib, name, fn_ret_t, fn_args_t...)                                                                    \
+    fn_ret_t (*orig_##name)(fn_args_t);                                                                                    \
+    fn_ret_t fake_##name(fn_args_t);                                                                                       \
+    static void install_hook_##name() {                                                                                    \
+        void *sym_addr = DobbySymbolResolver(lib, #name);                                                                  \
+        DobbyHook(sym_addr, (dobby_dummy_func_t)fake_##name, (dobby_dummy_func_t*)&orig_##name);                           \
+    }                                                                                                                      \
+    fn_ret_t fake_##name(fn_args_t)
+
+#define INSTALL_HOOK_NO_LIB(name, fn_ret_t, fn_args_t...)                                                                  \
+    INSTALL_HOOK(nullptr, name, fn_ret_t, fn_args_t)
+
 // Fix for printing blank message in the console.
-void (*LogMsg)(const char*, ...);
-void LogMsg_hook(const char* msg, ...) {
+INSTALL_HOOK_NO_LIB(_Z6LogMsgPKcz, void, const char* msg, ...)
+{
     if (msg[0] == '\0') {
         return;
     }
@@ -29,30 +41,23 @@ void LogMsg_hook(const char* msg, ...) {
 }
 
 // Fix for 0ms timeout causing game lag.
-int (*enet_host_service)(void*, void*, uint32_t);
-int enet_host_service_hook(void* host, void* event, uint32_t timeout) {
-    return enet_host_service(host, event, timeout != 0 ? timeout : 16);
+INSTALL_HOOK_NO_LIB(enet_host_service, int, void* host, void* event, uint32_t timeout)
+{
+    return orig_enet_host_service(host, event, timeout != 0 ? timeout : 16);
 }
 
 namespace game {
     namespace hook {
-        void init() {
+        void init()
+        {
             // set Dobby logging level.
             log_set_level(0);
 
             // LogMsg(char const*,...)
-            DobbyHook(
-                DobbySymbolResolver(nullptr, "_Z6LogMsgPKcz"),
-                (dobby_dummy_func_t)LogMsg_hook,
-                (dobby_dummy_func_t*)&LogMsg
-            );
+            install_hook__Z6LogMsgPKcz();
 
             // enet_host_service
-            DobbyHook(
-                DobbySymbolResolver(nullptr, "enet_host_service"),
-                (dobby_dummy_func_t)enet_host_service_hook,
-                (dobby_dummy_func_t*)&enet_host_service
-            );
+            install_hook_enet_host_service();
         }
     }
 }

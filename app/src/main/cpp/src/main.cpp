@@ -5,7 +5,8 @@
 #include "game/hook.h"
 
 __unused __attribute__((constructor))
-void constructor_main() {
+void constructor_main()
+{
     // Create a new thread because we don't want do while loop make main thread
     // stuck.
     auto thread = std::thread([]() {
