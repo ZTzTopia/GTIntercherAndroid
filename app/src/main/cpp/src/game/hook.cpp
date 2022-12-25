@@ -1,7 +1,10 @@
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <android/log.h>
 #include <dobby.h>
+
+#include "../helper/gnu_string.h"
 
 #define INSTALL_HOOK(lib, name, fn_ret_t, fn_args_t...)                                                                    \
     fn_ret_t (*orig_##name)(fn_args_t);                                                                                    \
@@ -46,6 +49,19 @@ INSTALL_HOOK_NO_LIB(enet_host_service, int, void* host, void* event, uint32_t ti
     return orig_enet_host_service(host, event, timeout != 0 ? timeout : 16);
 }
 
+INSTALL_HOOK_NO_LIB(_Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer, void, int v1, gnu_string& v2, void* v3)
+{
+    __android_log_print(
+        ANDROID_LOG_INFO,
+        "GTL.Native",
+        "type: %d, length: %lu, data: %s",
+        v1,
+        v2.length(),
+        v2.data()
+    );
+    orig__Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer(v1, v2, v3);
+}
+
 struct BoostSignal {
     void* pad; // 0
     void* pad2; // 8
@@ -79,6 +95,9 @@ namespace game {
 
             // enet_host_service
             install_hook_enet_host_service();
+
+            // SendPacket(eNetMessageType,std::string const&,_ENetPeer *)
+            install_hook__Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer();
 
             // BaseApp::Draw(void)
             install_hook__ZN7BaseApp4DrawEv();
