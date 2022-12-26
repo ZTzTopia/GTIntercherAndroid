@@ -9,6 +9,7 @@
 // https://github.com/gcc-mirror/gcc/blob/releases/gcc-11.3.0/libstdc++-v3/include/bits/basic_string.tcc
 
 
+namespace gnu {
 // Reference-counted COW string implentation
 
 /**
@@ -74,13 +75,17 @@
 */
 // 21.3  Template class basic_string
 template<typename _CharT, typename _Traits, typename _Alloc>
-class basic_gnu_string {
+class basic_string
+{
+    typedef typename _Alloc::template
+        rebind<_CharT>::other _CharT_alloc_type;
+    typedef std::allocator_traits<_CharT_alloc_type> _CharT_alloc_traits;
+
     // Types:
 public:
     typedef _Traits                                      traits_type;
     typedef _Alloc                                       allocator_type;
-    typedef std::allocator<allocator_type>               __alloc_traits;
-    typedef typename __alloc_traits::size_type           size_type;
+    typedef typename _CharT_alloc_traits::size_type      size_type;
 
     // NB: This is an unsigned type, and thus represents the maximum
     // size that the allocator can hold.
@@ -106,11 +111,12 @@ private:
     {
         size_type _M_length;
         size_type _M_capacity;
-        int _M_refcount;
+        std::atomic<int> _M_refcount;
     };
 
     struct _Rep : _Rep_base
     {
+        // Types:
         typedef typename _Alloc::template rebind<char>::other _Raw_bytes_alloc;
 
         // (Public) Data members:
@@ -160,7 +166,7 @@ private:
 
             // The standard places no restriction on allocating more memory
             // than is strictly needed within this layer at the moment or as
-            // requested by an explicit application call to reserve().
+            // requested by an explicit application call to reserve(n).
 
             // Many malloc implementations perform quite poorly when an
             // application attempts to allocate memory in a stepwise fashion
@@ -228,8 +234,8 @@ private:
         void
         _M_dispose(const _Alloc& __a) noexcept
         {
-#define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(A)
-#define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(A)
+#define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(A) A.wait()
+#define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(A) A.notify_all()
 
             // Be race-detector-friendly.  For more info see bits/c++config.
             _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(&this->_M_refcount);
@@ -247,11 +253,7 @@ private:
             //     _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(&this->_M_refcount);
             //     _M_destroy(__a);
             // }
-
-            int old_refcount = this->_M_refcount;
-            this->_M_refcount = -1;
-
-            if (old_refcount <= 0) {
+            if (this->_M_refcount.exchange(-1) <= 0) {
                 _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(&this->_M_refcount);
                 _M_destroy(__a);
             }
@@ -317,7 +319,7 @@ public:
     /**
      *  @brief  Default constructor creates an empty string.
      */
-    basic_gnu_string()
+    basic_string()
         : _M_dataplus(_S_construct(size_type(), _CharT(), _Alloc()), _Alloc()){ }
 
     /**
@@ -329,7 +331,7 @@ public:
      *  NB: @a __s must have at least @a __n characters, &apos;\\0&apos;
      *  has no special meaning.
      */
-    basic_gnu_string(const _CharT* __s, size_type __n,
+    basic_string(const _CharT* __s, size_type __n,
         const _Alloc& __a = _Alloc())
         : _M_dataplus(_S_construct(__s, __s + __n, __a), __a) { }
 
@@ -338,14 +340,14 @@ public:
      *  @param  __s  Source C string.
      *  @param  __a  Allocator to use (default is default allocator).
      */
-    basic_gnu_string(const _CharT* __s, const _Alloc& __a = _Alloc())
+    basic_string(const _CharT* __s, const _Alloc& __a = _Alloc())
         : _M_dataplus(_S_construct(__s, __s ? __s + traits_type::length(__s) :
                                     __s + npos, __a), __a) { }
 
     /**
      *  @brief  Destroy the string instance.
      */
-    ~basic_gnu_string() noexcept
+    ~basic_string() noexcept
     { _M_rep()->_M_dispose(this->get_allocator()); }
 
 public:
@@ -539,5 +541,6 @@ public:
     { return _M_dataplus; }
 };
 
-using gnu_string = basic_gnu_string<char, std::char_traits<char>, std::allocator<char>>;
-using gnu_wstring = basic_gnu_string<wchar_t, std::char_traits<wchar_t>, std::allocator<wchar_t>>;
+using string = basic_string<char, std::char_traits<char>, std::allocator<char>>;
+using wstring = basic_string<wchar_t, std::char_traits<wchar_t>, std::allocator<wchar_t>>;
+}
