@@ -2,10 +2,10 @@ plugins {
     id 'com.android.application'
 }
 
-def baseVersionName = "1.0.0-alpha01"
+def baseVersionName = "1.0.0-alpha02"
 def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
 def shortRev = "git rev-parse --short HEAD".execute().text.toString().trim()
-def isDevBuild = "git tag -l ${baseVersionName}".execute().text.isEmpty()
+def isDevBuild = "git tag -l v${baseVersionName}".execute().text.isEmpty()
 
 def genVersionCode = "git rev-list --count HEAD".execute().text.toInteger()
 def genVersionName =
@@ -63,7 +63,7 @@ android {
             // GTLauncher-1.0.0.dev.deadbeef
             // GTLauncher-1.0.0.dev.deadbeef.27
             // GTLauncher-1.0.0.deadbeef-release
-            outputFileName = new File("GTLauncher-${genVersionName}-${isDevBuild ? "" : variant.buildType.name}.apk")
+            outputFileName = new File("GTLauncher-${genVersionName}${isDevBuild ? "" : "-${variant.buildType.name}"}.apk")
         }
     }
 }
