@@ -48,17 +48,17 @@ INSTALL_HOOK(LogMsg, void, const char* msg, ...)
     );
 }
 
-INSTALL_HOOK(SendPacket, void, int v1, gnu::string& v2, void* v3)
+INSTALL_HOOK(SendPacket, void, int message_type, gnu::string& message, void* enet_peer)
 {
     __android_log_print(
         ANDROID_LOG_INFO,
         "GTL.Native",
         "type: %d, length: %lu, data: %s",
-        v1,
-        v2.length(),
-        v2.data()
+        message_type,
+        message.length(),
+        message.data()
     );
-    orig_SendPacket(v1, v2, v3);
+    orig_SendPacket(message_type, message, enet_peer);
 }
 
 struct BoostSignal {
@@ -76,10 +76,10 @@ struct BaseApp {
     // ARM64 size!
 };
 
-INSTALL_HOOK(BaseApp__Draw, void, BaseApp* v1)
+INSTALL_HOOK(BaseApp__Draw, void, BaseApp* thiz)
 {
-    v1->fpsVisible = true;
-    orig_BaseApp__Draw(v1);
+    thiz->fpsVisible = true;
+    orig_BaseApp__Draw(thiz);
 }
 
 namespace game {
