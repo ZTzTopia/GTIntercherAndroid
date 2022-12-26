@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 3.18..3.24)
 project(GrowtopiaFix LANGUAGES CXX)
 
 file(GLOB INCLUDE_FILES
