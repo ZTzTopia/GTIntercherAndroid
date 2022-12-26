@@ -135,6 +135,12 @@ private:
         static const size_type	_S_max_size = (((npos - sizeof(_Rep_base))/sizeof(_CharT)) - 1) / 4;
         static const _CharT _S_terminal = _CharT();
 
+        bool
+        _M_is_leaked() const noexcept
+        {
+            return this->_M_refcount.load() < 0;
+        }
+
         void
         _M_set_sharable() noexcept
         { this->_M_refcount = 0; }
@@ -153,6 +159,13 @@ private:
         _CharT*
         _M_refdata() throw()
         { return reinterpret_cast<_CharT*>(this + 1); }
+
+        _CharT*
+        _M_grab(const _Alloc& __alloc1, const _Alloc& __alloc2)
+        {
+            return (!_M_is_leaked() && __alloc1 == __alloc2)
+                   ? _M_refcopy() : _M_clone(__alloc1);
+        }
 
         // Create & Destroy
         static _Rep*
@@ -266,6 +279,13 @@ private:
                                      (this->_M_capacity + 1) * sizeof(_CharT);
             _Raw_bytes_alloc(__a).deallocate(reinterpret_cast<char*>(this), __size);
         }
+
+        _CharT*
+        _M_refcopy() throw()
+        {
+            this->_M_refcount.store(1);
+            return _M_refdata();
+        }  // XXX MT
     };
 
     // Use empty-base optimization: http://www.cantrip.org/emptyopt.html
@@ -322,6 +342,17 @@ public:
     basic_string()
         : _M_dataplus(_S_construct(size_type(), _CharT(), _Alloc()), _Alloc()){ }
 
+    // NB: per LWG issue 42, semantics different from IS:
+    /**
+     *  @brief  Construct string with copy of value of @a str.
+     *  @param  __str  Source string.
+     */
+    basic_string(const basic_string& __str)
+        : _M_dataplus(__str._M_rep()->_M_grab(_Alloc(__str.get_allocator()),
+                                              __str.get_allocator()),
+                      __str.get_allocator())
+    { }
+
     /**
      *  @brief  Construct string initialized by a character %array.
      *  @param  __s  Source character %array.
@@ -343,6 +374,21 @@ public:
     basic_string(const _CharT* __s, const _Alloc& __a = _Alloc())
         : _M_dataplus(_S_construct(__s, __s ? __s + traits_type::length(__s) :
                                     __s + npos, __a), __a) { }
+
+#if __cplusplus >= 201103L
+        /**
+         *  @brief  Move construct string.
+         *  @param  __str  Source string.
+         *
+         *  The newly-created string contains the exact contents of @a __str.
+         *  @a __str is a valid, but unspecified string.
+         */
+        basic_string(basic_string&& __str)
+            : _M_dataplus(std::move(__str._M_dataplus))
+        {
+            __str._M_data(_S_construct(size_type(), _CharT(), get_allocator()));
+        }
+#endif // C++11
 
     /**
      *  @brief  Destroy the string instance.
