@@ -1,5 +1,7 @@
 package com.rtsoft.growtopia;
 
+import static com.gt.launcher.Main.isInApp;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -12,7 +14,6 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.Sensor;
@@ -63,7 +64,6 @@ import com.google.android.vending.licensing.AESObfuscator;
 import com.google.android.vending.licensing.LicenseChecker;
 import com.google.android.vending.licensing.LicenseCheckerCallback;
 import com.google.android.vending.licensing.ServerManagedPolicy;
-import com.gt.launcher.FloatingService;
 import com.gt.launcher.R;
 import com.tapjoy.TJActionRequest;
 import com.tapjoy.TJConnectListener;
@@ -240,7 +240,6 @@ public class SharedActivity extends Activity implements SensorEventListener,
         24, -96, 16, 91, 65, -86, -54, -73, -101, 12, -84, -90, -53, -68, 20, -67, 45, 35, 85, 17
     };
     public boolean inFloatingMode = false;
-    public boolean aleardyAtHome = false;
     // JNI to play music, etc
     public MediaPlayer _music = null;
     // JNI to play sounds
@@ -1037,7 +1036,7 @@ public class SharedActivity extends Activity implements SensorEventListener,
     protected synchronized void onResume() {
         music_set_volume(m_lastMusicVol);
 
-        if (!inFloatingMode && !aleardyAtHome) {
+        if (!inFloatingMode && isInApp()) {
             mGLView.onResume();
         }
 
@@ -1047,15 +1046,6 @@ public class SharedActivity extends Activity implements SensorEventListener,
 
         if (iapManager != null) {
             iapManager.RequestAIPPurchasedList();
-        }
-
-        if (inFloatingMode && aleardyAtHome) {
-            SharedActivity.app.aleardyAtHome = false;
-            FloatingService.mFloatingService.showFloatingWindow(false);
-        }
-
-        if (!inFloatingMode && aleardyAtHome) {
-            SharedActivity.app.aleardyAtHome = false;
         }
     }
 
@@ -1459,7 +1449,7 @@ public class SharedActivity extends Activity implements SensorEventListener,
     }
 
     public void toggle_keyboard(boolean show) {
-        if (inFloatingMode && aleardyAtHome) {
+        if (inFloatingMode && isInApp()) {
             showEditTextBox(show);
         }
 
