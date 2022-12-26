@@ -1,25 +1,30 @@
 #include <cstdio>
 #include <cstring>
-#include <string>
 #include <android/log.h>
 #include <dobby.h>
 
 #include "../helper/gnu_string.h"
 
-#define INSTALL_HOOK(lib, name, fn_ret_t, fn_args_t...)                                                                    \
-    fn_ret_t (*orig_##name)(fn_args_t);                                                                                    \
-    fn_ret_t fake_##name(fn_args_t);                                                                                       \
-    static void install_hook_##name() {                                                                                    \
-        void *sym_addr = DobbySymbolResolver(lib, #name);                                                                  \
-        DobbyHook(sym_addr, (dobby_dummy_func_t)fake_##name, (dobby_dummy_func_t*)&orig_##name);                           \
+#define INSTALL_HOOK(fn_name_t, fn_ret_t, fn_args_t...)                                                                    \
+    fn_ret_t (*orig_##fn_name_t)(fn_args_t);                                                                               \
+    fn_ret_t fake_##fn_name_t(fn_args_t);                                                                                  \
+    static void install_hook_##fn_name_t(void* sym_addr)                                                                   \
+    {                                                                                                                      \
+        DobbyHook(sym_addr, (dobby_dummy_func_t)fake_##fn_name_t, (dobby_dummy_func_t*)&orig_##fn_name_t);                 \
     }                                                                                                                      \
-    fn_ret_t fake_##name(fn_args_t)
-
-#define INSTALL_HOOK_NO_LIB(name, fn_ret_t, fn_args_t...)                                                                  \
-    INSTALL_HOOK(nullptr, name, fn_ret_t, fn_args_t)
+    static void install_hook_##fn_name_t(const char* lib, const char* name)                                                \
+    {                                                                                                                      \
+        void *sym_addr = DobbySymbolResolver(lib, name);                                                                   \
+        install_hook_##fn_name_t(sym_addr);                                                                                \
+    }                                                                                                                      \
+    static void install_hook_##fn_name_t(const char* name)                                                                 \
+    {                                                                                                                      \
+        install_hook_##fn_name_t(nullptr, name);                                                                           \
+    }                                                                                                                      \
+    fn_ret_t fake_##fn_name_t(fn_args_t)
 
 // Fix for printing blank message in the console.
-INSTALL_HOOK_NO_LIB(_Z6LogMsgPKcz, void, const char* msg, ...)
+INSTALL_HOOK(LogMsg, void, const char* msg, ...)
 {
     if (msg[0] == '\0') {
         return;
@@ -43,13 +48,7 @@ INSTALL_HOOK_NO_LIB(_Z6LogMsgPKcz, void, const char* msg, ...)
     );
 }
 
-// Fix for 0ms timeout causing game lag.
-INSTALL_HOOK_NO_LIB(enet_host_service, int, void* host, void* event, uint32_t timeout)
-{
-    return orig_enet_host_service(host, event, timeout != 0 ? timeout : 16);
-}
-
-INSTALL_HOOK_NO_LIB(_Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer, void, int v1, gnu_string& v2, void* v3)
+INSTALL_HOOK(SendPacket, void, int v1, gnu::string& v2, void* v3)
 {
     __android_log_print(
         ANDROID_LOG_INFO,
@@ -59,7 +58,7 @@ INSTALL_HOOK_NO_LIB(_Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer, void, int v1
         v2.length(),
         v2.data()
     );
-    orig__Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer(v1, v2, v3);
+    orig_SendPacket(v1, v2, v3);
 }
 
 struct BoostSignal {
@@ -77,10 +76,10 @@ struct BaseApp {
     // ARM64 size!
 };
 
-INSTALL_HOOK_NO_LIB(_ZN7BaseApp4DrawEv, void, BaseApp* v1)
+INSTALL_HOOK(BaseApp__Draw, void, BaseApp* v1)
 {
     v1->fpsVisible = true;
-    orig__ZN7BaseApp4DrawEv(v1);
+    orig_BaseApp__Draw(v1);
 }
 
 namespace game {
@@ -91,16 +90,13 @@ namespace game {
             log_set_level(0);
 
             // LogMsg(char const*,...)
-            install_hook__Z6LogMsgPKcz();
-
-            // enet_host_service
-            install_hook_enet_host_service();
+            install_hook_LogMsg("_Z6LogMsgPKcz");
 
             // SendPacket(eNetMessageType,std::string const&,_ENetPeer *)
-            install_hook__Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer();
+            install_hook_SendPacket("_Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer");
 
             // BaseApp::Draw(void)
-            install_hook__ZN7BaseApp4DrawEv();
+            install_hook_BaseApp__Draw("_ZN7BaseApp4DrawEv");
         }
     }
 }
