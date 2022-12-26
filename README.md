@@ -19,7 +19,7 @@ Android 5.0 Lollipop (SDK 21) ~ 13 Tiramisu (SDK 33)
 |  ![Floating Windows](https://i.imgur.com/WOT5aEf.png)  |
 
 ## Download
-The latest application package kit can be found on the [releases page](https://github.com/ZTzTopia/GLauncherAndroid/releases).
+The latest application package kit can be found on the [releases page](https://github.com/ZTzTopia/GTLauncherAndroid/releases).
 
 ## Build
 The following dependencies are required to build from source.
