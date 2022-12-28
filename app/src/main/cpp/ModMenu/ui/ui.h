@@ -1,6 +1,4 @@
 #pragma once
-#include <imgui.h>
-
 #include "imgui_wrapper.h"
 
 namespace ui {
