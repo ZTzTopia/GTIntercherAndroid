@@ -26,7 +26,8 @@ import java.util.zip.ZipInputStream;
 public class Main extends com.rtsoft.growtopia.Main {
     static final String[] NATIVE_LIBRARIES = {
         "anzu", // We need anzu because we are using NativeUtils.installNativeLibraryPath
-        "GrowtopiaFix"
+        "GrowtopiaFix",
+        "ModMenu"
     };
     private static final String TAG = "GTL.Main";
 

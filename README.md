@@ -51,7 +51,6 @@ The following steps are for building from source.
 - [Dobby](https://github.com/jmpews/Dobby): A lightweight, multi-platform, multi-architecture hook framework
 - [frida-gum](https://github.com/frida/frida-gum): Retrieve some memory code
 - [ImGui](https://github.com/ocornut/imgui): Bloat-free Graphical User interface
-- [llvm-project](https://github.com/llvm/llvm-project): Retrieve clear cache code
 - [KittyMemory](https://github.com/MJx0/KittyMemory): Runtime code patching
 
 ## License
