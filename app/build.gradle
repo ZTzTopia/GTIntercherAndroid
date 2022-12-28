@@ -19,7 +19,7 @@ android {
     namespace "com.gt.launcher"
 
     defaultConfig {
-        applicationId "com.gt.launcher"
+        applicationId 'com.gt.intercher'
         minSdk 21
         targetSdk 33
         versionCode genVersionCode
@@ -59,11 +59,11 @@ android {
 
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
-            // GTLauncher-1.0.0.deadbeef
-            // GTLauncher-1.0.0.dev.deadbeef
-            // GTLauncher-1.0.0.dev.deadbeef.27
-            // GTLauncher-1.0.0.deadbeef-release
-            outputFileName = new File("GTLauncher-${genVersionName}${isDevBuild ? "" : "-${variant.buildType.name}"}.apk")
+            // GTIntercher-1.0.0.deadbeef
+            // GTIntercher-1.0.0.dev.deadbeef
+            // GTIntercher-1.0.0.dev.deadbeef.27
+            // GTIntercher-1.0.0.deadbeef-release
+            outputFileName = new File("GTIntercher-${genVersionName}${isDevBuild ? "" : "-${variant.buildType.name}"}.apk")
         }
     }
 }
