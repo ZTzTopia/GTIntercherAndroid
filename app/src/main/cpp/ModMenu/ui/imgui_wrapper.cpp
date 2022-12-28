@@ -31,7 +31,7 @@ bool ImGuiWrapper::init()
 
     // Setup Font
     ImFontConfig font_cfg;
-    font_cfg.SizePixels = 22.0f;
+    font_cfg.SizePixels = 14.0f * (m_display_scale.x + m_display_scale.y);
     io.Fonts->AddFontDefault(&font_cfg);
 
     // Scale All Widgets Size
