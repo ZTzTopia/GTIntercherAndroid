@@ -21,4 +21,23 @@ void Ui::draw()
     static bool open = true;
     ImGui::ShowDemoWindow(&open);
 }
+
+void Ui::on_touch(int type, bool multi, float x, float y) {
+    ImGuiIO &io = ImGui::GetIO();
+    switch (type) {
+    case 1:
+        io.MouseDown[0] = false;
+        m_clear_pos = true;
+        break;
+    case 2:
+        io.MousePos = ImVec2(x, y);
+        io.MouseDown[0] = true;
+        break;
+    case 3:
+        io.MousePos = ImVec2(x, y);
+        break;
+    default:
+        break;
+    }
+}
 } // ui

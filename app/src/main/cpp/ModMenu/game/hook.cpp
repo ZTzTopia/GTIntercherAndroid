@@ -27,6 +27,20 @@ INSTALL_HOOK(BaseApp__Draw, void, void* thiz)
     orig_BaseApp__Draw(thiz);
 }
 
+INSTALL_HOOK(AppOnTouch, void, void *a1, void *a2, int type, float x, float y, bool multi)
+{
+    if (g_mod_menu->m_ui && (x > 0.0 || y > 0.0)) {
+        g_mod_menu->m_ui->on_touch(type, multi, x, y);
+    }
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (!io.WantCaptureMouse) {
+        orig_AppOnTouch(a1, a2, type, x, y, multi);
+    } else {
+        orig_AppOnTouch(a1, a2, 1, 0.0f, 0.0f, false);
+    }
+}
+
 namespace game {
     namespace hook {
         void init()
@@ -36,6 +50,9 @@ namespace game {
 
             // BaseApp::Draw(void)
             install_hook_BaseApp__Draw("_ZN7BaseApp4DrawEv");
+
+            // AppOnTouch(_JNIEnv *,_jobject *,int,float,float,int)
+            install_hook_AppOnTouch("_Z10AppOnTouchP7_JNIEnvP8_jobjectiffi");
         }
     }
 }

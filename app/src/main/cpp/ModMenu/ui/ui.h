@@ -12,6 +12,8 @@ public:
     void render() override;
     void draw() override;
 
+    void on_touch(int type, bool multi, float x, float y);
+
 private:
     bool m_clear_pos;
 };
