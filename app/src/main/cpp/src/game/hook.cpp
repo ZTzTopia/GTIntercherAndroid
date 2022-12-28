@@ -83,20 +83,20 @@ INSTALL_HOOK(BaseApp__Draw, void, BaseApp* thiz)
 }
 
 namespace game {
-    namespace hook {
-        void init()
-        {
-            // set Dobby logging level.
-            log_set_level(0);
+namespace hook {
+    void init()
+    {
+        // set Dobby logging level.
+        log_set_level(0);
 
-            // LogMsg(char const*,...)
-            install_hook_LogMsg("_Z6LogMsgPKcz");
+        // LogMsg(char const*,...)
+        install_hook_LogMsg("_Z6LogMsgPKcz");
 
-            // SendPacket(eNetMessageType,std::string const&,_ENetPeer *)
-            install_hook_SendPacket("_Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer");
+        // SendPacket(eNetMessageType,std::string const&,_ENetPeer *)
+        install_hook_SendPacket("_Z10SendPacket15eNetMessageTypeRKSsP9_ENetPeer");
 
-            // BaseApp::Draw(void)
-            install_hook_BaseApp__Draw("_ZN7BaseApp4DrawEv");
-        }
+        // BaseApp::Draw(void)
+        install_hook_BaseApp__Draw("_ZN7BaseApp4DrawEv");
     }
-}
+} // hook
+} // game

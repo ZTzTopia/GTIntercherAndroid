@@ -42,17 +42,17 @@ INSTALL_HOOK(AppOnTouch, void, void *a1, void *a2, int type, float x, float y, b
 }
 
 namespace game {
-    namespace hook {
-        void init()
-        {
-            // set Dobby logging level.
-            log_set_level(0);
+namespace hook {
+void init()
+{
+    // set Dobby logging level.
+    log_set_level(0);
 
-            // BaseApp::Draw(void)
-            install_hook_BaseApp__Draw("_ZN7BaseApp4DrawEv");
+    // BaseApp::Draw(void)
+    install_hook_BaseApp__Draw("_ZN7BaseApp4DrawEv");
 
-            // AppOnTouch(_JNIEnv *,_jobject *,int,float,float,int)
-            install_hook_AppOnTouch("_Z10AppOnTouchP7_JNIEnvP8_jobjectiffi");
-        }
-    }
+    // AppOnTouch(_JNIEnv *,_jobject *,int,float,float,int)
+    install_hook_AppOnTouch("_Z10AppOnTouchP7_JNIEnvP8_jobjectiffi");
 }
+} // hook
+} // game
