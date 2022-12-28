@@ -20,6 +20,8 @@ INSTALL_HOOK(BaseApp__Draw, void, void* thiz)
             KittyMemory::callFunction<float>(DobbySymbolResolver(nullptr, "_Z15GetScreenSizeYfv"));
 
         g_mod_menu->m_ui = new ui::Ui{ ImVec2{ width, height } };
+        g_mod_menu->m_ui->init();
+
         once = true;
     }
 
@@ -29,14 +31,15 @@ INSTALL_HOOK(BaseApp__Draw, void, void* thiz)
 
 INSTALL_HOOK(AppOnTouch, void, void *a1, void *a2, int type, float x, float y, bool multi)
 {
-    if (g_mod_menu->m_ui && (x > 0.0 || y > 0.0)) {
+    if (g_mod_menu->m_ui && (x > 0.0f || y > 0.0f)) {
         g_mod_menu->m_ui->on_touch(type, multi, x, y);
     }
 
     ImGuiIO& io = ImGui::GetIO();
     if (!io.WantCaptureMouse) {
         orig_AppOnTouch(a1, a2, type, x, y, multi);
-    } else {
+    }
+    else {
         orig_AppOnTouch(a1, a2, 1, 0.0f, 0.0f, false);
     }
 }

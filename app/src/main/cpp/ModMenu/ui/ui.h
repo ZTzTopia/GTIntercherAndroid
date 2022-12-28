@@ -2,7 +2,7 @@
 #include "imgui_wrapper.h"
 
 namespace ui {
-class Ui : ImGuiWrapper {
+class Ui : public ImGuiWrapper {
 public:
     Ui(ImVec2 display_size);
     ~Ui() = default;
